@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 
-import '../../../core/config/env_config.dart';
 import '../../../core/mock/mock_data.dart';
 import '../../../core/network/http_client.dart';
 import '../../../core/storage/storage_service.dart';
@@ -42,7 +41,7 @@ class AuthService extends GetxService {
     }
 
     // 生产模式：调用真实 API
-    final response = await _http.post(
+    final response = await _http.post<Map<String, dynamic>>(
       ApiConstants.login,
       data: {
         'username': username,
@@ -68,7 +67,7 @@ class AuthService extends GetxService {
   /// 模拟登录（开发模式）
   Future<UserModel> _mockLogin(String username, String password) async {
     // 模拟网络延迟
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future<void>.delayed(const Duration(milliseconds: 500));
 
     // 获取模拟响应数据
     final mockResponse = MockData.loginResponse(username);
@@ -119,7 +118,7 @@ class AuthService extends GetxService {
       return _mockLogin(username, password);
     }
 
-    final response = await _http.post(
+    final response = await _http.post<Map<String, dynamic>>(
       ApiConstants.register,
       data: {
         'username': username,
@@ -146,7 +145,7 @@ class AuthService extends GetxService {
     // 非 Mock 模式：调用登出 API
     if (!MockData.enabled) {
       try {
-        await _http.post(ApiConstants.logout);
+        await _http.post<void>(ApiConstants.logout);
       } catch (e) {
         // 忽略登出请求的错误
       }
@@ -172,7 +171,7 @@ class AuthService extends GetxService {
     }
 
     try {
-      final response = await _http.post(
+      final response = await _http.post<Map<String, dynamic>>(
         ApiConstants.refreshToken,
         data: {'refreshToken': refreshToken},
       );
@@ -188,9 +187,9 @@ class AuthService extends GetxService {
 
   /// 获取用户信息
   Future<UserModel> getUserInfo() async {
-    final response = await _http.get(ApiConstants.userInfo);
+    final response = await _http.get<Map<String, dynamic>>(ApiConstants.userInfo);
 
-    _currentUser = UserModel.fromJson(response.data as Map<String, dynamic>);
+    _currentUser = UserModel.fromJson(response.data!);
     await _storage.saveUserData(
         StorageKeys.currentUser, _currentUser!.toJson());
 

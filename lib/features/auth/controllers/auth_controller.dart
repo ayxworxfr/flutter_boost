@@ -77,16 +77,16 @@ class AuthController extends GetxController {
         password: passwordController.text,
       );
 
-      LoggerUtil.info('pages.login.success'.tr);
+      LoggerUtil.i('pages.login.success'.tr);
       
       // 清空表单
       _clearForm();
       
       // 跳转首页
-      Get.offAllNamed(AppRoutes.home);
+      Get.offAllNamed<void>(AppRoutes.home);
     } catch (e) {
       errorMessage.value = e.toString();
-      LoggerUtil.error('pages.login.failed'.tr, e);
+      LoggerUtil.e('pages.login.failed'.tr, e);
     } finally {
       isLoading.value = false;
     }
@@ -120,7 +120,7 @@ class AuthController extends GetxController {
       _clearForm();
       
       // 跳转首页
-      Get.offAllNamed(AppRoutes.home);
+      Get.offAllNamed<void>(AppRoutes.home);
     } catch (e) {
       errorMessage.value = e.toString();
       LoggerUtil.error('pages.register.failed'.tr, e);
@@ -138,7 +138,7 @@ class AuthController extends GetxController {
       LoggerUtil.info('pages.settings.logout_success'.tr);
       
       // 跳转登录页
-      Get.offAllNamed(AppRoutes.login);
+      Get.offAllNamed<void>(AppRoutes.login);
     } catch (e) {
       LoggerUtil.error('pages.settings.logout'.tr, e);
     } finally {
@@ -149,13 +149,13 @@ class AuthController extends GetxController {
   /// 跳转到注册页
   void goToRegister() {
     _clearForm();
-    Get.toNamed(AppRoutes.register);
+    Get.toNamed<void>(AppRoutes.register);
   }
 
   /// 跳转到登录页
   void goToLogin() {
     _clearForm();
-    Get.back();
+    Get.back<void>();
   }
 
   /// 清空表单

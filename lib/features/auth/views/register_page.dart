@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validator_util.dart';
-import '../../../core/widgets/app_button.dart';
 import '../controllers/auth_controller.dart';
 
 /// 注册页面
@@ -14,56 +12,34 @@ class RegisterPage extends GetView<AuthController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w),
-          child: Form(
-            key: controller.registerFormKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 标题
-                _buildTitle(),
-                
-                SizedBox(height: 32.h),
-                
-                // 用户名输入框
-                _buildUsernameField(),
-                
-                SizedBox(height: 16.h),
-                
-                // 邮箱输入框
-                _buildEmailField(),
-                
-                SizedBox(height: 16.h),
-                
-                // 密码输入框
-                _buildPasswordField(),
-                
-                SizedBox(height: 16.h),
-                
-                // 确认密码输入框
-                _buildConfirmPasswordField(),
-                
-                SizedBox(height: 8.h),
-                
-                // 错误信息
-                _buildErrorMessage(),
-                
-                SizedBox(height: 24.h),
-                
-                // 注册按钮
-                _buildRegisterButton(),
-                
-                SizedBox(height: 16.h),
-                
-                // 登录入口
-                _buildLoginEntry(),
-              ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo 卡片
+                    _buildLogoCard(),
+                    const SizedBox(height: 32),
+                    // 注册表单卡片
+                    _buildFormCard(context),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -71,118 +47,199 @@ class RegisterPage extends GetView<AuthController> {
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildLogoCard() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'pages.register.welcome'.tr,
-          style: TextStyle(
-            fontSize: 28.sp,
-            fontWeight: FontWeight.bold,
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.person_add_rounded,
+            size: 40,
+            color: AppColors.primary,
           ),
         ),
-        SizedBox(height: 8.h),
+        const SizedBox(height: 16),
+        Text(
+          'pages.register.welcome'.tr,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 4),
         Text(
           'pages.register.subtitle'.tr,
           style: TextStyle(
-            fontSize: 14.sp,
-            color: AppColors.textSecondary,
+            fontSize: 14,
+            color: Colors.white.withValues(alpha: 0.8),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildUsernameField() {
-    return TextFormField(
-      controller: controller.usernameController,
-      decoration: InputDecoration(
-        labelText: 'pages.register.username'.tr,
-        hintText: 'pages.register.username_hint'.tr,
-        prefixIcon: const Icon(Icons.person_outline),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
+  Widget _buildFormCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Form(
+        key: controller.registerFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 用户名输入框
+            _buildTextField(
+              controller: controller.usernameController,
+              label: 'pages.register.username'.tr,
+              hint: 'pages.register.username_hint'.tr,
+              icon: Icons.person_outline_rounded,
+              validator: ValidatorUtil.validateUsername,
+            ),
+            const SizedBox(height: 16),
+
+            // 邮箱输入框
+            _buildTextField(
+              controller: controller.emailController,
+              label: 'pages.register.email'.tr,
+              hint: 'pages.register.email_hint'.tr,
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+
+            // 密码输入框
+            Obx(() => _buildTextField(
+                  controller: controller.passwordController,
+                  label: 'pages.register.password'.tr,
+                  hint: 'pages.register.password_hint'.tr,
+                  icon: Icons.lock_outline_rounded,
+                  obscureText: !controller.isPasswordVisible.value,
+                  validator: ValidatorUtil.validatePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      controller.isPasswordVisible.value
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: controller.togglePasswordVisibility,
+                  ),
+                )),
+            const SizedBox(height: 16),
+
+            // 确认密码输入框
+            Obx(() => _buildTextField(
+                  controller: controller.confirmPasswordController,
+                  label: 'pages.register.confirm_password'.tr,
+                  hint: 'pages.register.confirm_password_hint'.tr,
+                  icon: Icons.lock_outline_rounded,
+                  obscureText: !controller.isConfirmPasswordVisible.value,
+                  validator: (value) {
+                    if (value != controller.passwordController.text) {
+                      return 'validation.password.mismatch'.tr;
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      controller.isConfirmPasswordVisible.value
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    onPressed: controller.toggleConfirmPasswordVisibility,
+                  ),
+                  onSubmitted: (_) => controller.register(),
+                )),
+
+            // 错误信息
+            _buildErrorMessage(),
+            const SizedBox(height: 24),
+
+            // 注册按钮
+            _buildRegisterButton(),
+            const SizedBox(height: 16),
+
+            // 登录入口
+            _buildLoginEntry(),
+          ],
         ),
       ),
-      validator: ValidatorUtil.validateUsername,
-      textInputAction: TextInputAction.next,
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+    Widget? suffixIcon,
+    TextInputType? keyboardType,
+    void Function(String)? onSubmitted,
+  }) {
     return TextFormField(
-      controller: controller.emailController,
-      keyboardType: TextInputType.emailAddress,
+      controller: controller,
+      obscureText: obscureText,
+      validator: validator,
+      keyboardType: keyboardType,
+      textInputAction:
+          onSubmitted != null ? TextInputAction.done : TextInputAction.next,
+      onFieldSubmitted: onSubmitted,
       decoration: InputDecoration(
-        labelText: 'pages.register.email'.tr,
-        hintText: 'pages.register.email_hint'.tr,
-        prefixIcon: const Icon(Icons.email_outlined),
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.textSecondary),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.grey.shade50,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
       ),
-      validator: ValidatorUtil.validateEmail,
-      textInputAction: TextInputAction.next,
     );
-  }
-
-  Widget _buildPasswordField() {
-    return Obx(() => TextFormField(
-      controller: controller.passwordController,
-      obscureText: !controller.isPasswordVisible.value,
-      decoration: InputDecoration(
-        labelText: 'pages.register.password'.tr,
-        hintText: 'pages.register.password_hint'.tr,
-        prefixIcon: const Icon(Icons.lock_outline),
-        suffixIcon: IconButton(
-          icon: Icon(
-            controller.isPasswordVisible.value
-                ? Icons.visibility_off
-                : Icons.visibility,
-          ),
-          onPressed: controller.togglePasswordVisibility,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
-      validator: ValidatorUtil.validatePassword,
-      textInputAction: TextInputAction.next,
-    ));
-  }
-
-  Widget _buildConfirmPasswordField() {
-    return Obx(() => TextFormField(
-      controller: controller.confirmPasswordController,
-      obscureText: !controller.isConfirmPasswordVisible.value,
-      decoration: InputDecoration(
-        labelText: 'pages.register.confirm_password'.tr,
-        hintText: 'pages.register.confirm_password_hint'.tr,
-        prefixIcon: const Icon(Icons.lock_outline),
-        suffixIcon: IconButton(
-          icon: Icon(
-            controller.isConfirmPasswordVisible.value
-                ? Icons.visibility_off
-                : Icons.visibility,
-          ),
-          onPressed: controller.toggleConfirmPasswordVisibility,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-      ),
-      validator: (value) {
-        final passwordError = ValidatorUtil.validatePassword(value);
-        if (passwordError != null) return passwordError;
-        if (value != controller.passwordController.text) {
-          return 'validation.password.mismatch'.tr;
-        }
-        return null;
-      },
-      textInputAction: TextInputAction.done,
-      onFieldSubmitted: (_) => controller.register(),
-    ));
   }
 
   Widget _buildErrorMessage() {
@@ -191,12 +248,27 @@ class RegisterPage extends GetView<AuthController> {
         return const SizedBox.shrink();
       }
       return Padding(
-        padding: EdgeInsets.only(top: 8.h),
-        child: Text(
-          controller.errorMessage.value,
-          style: TextStyle(
-            color: AppColors.error,
-            fontSize: 12.sp,
+        padding: const EdgeInsets.only(top: 12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  controller.errorMessage.value,
+                  style: const TextStyle(
+                    color: AppColors.error,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -204,35 +276,64 @@ class RegisterPage extends GetView<AuthController> {
   }
 
   Widget _buildRegisterButton() {
-    return Obx(() => AppButton(
-      text: 'pages.register.submit'.tr,
-      onPressed: controller.register,
-      isLoading: controller.isLoading.value,
-    ));
+    return Obx(() => SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed:
+                controller.isLoading.value ? null : controller.register,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: controller.isLoading.value
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    'pages.register.submit'.tr,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ));
   }
 
   Widget _buildLoginEntry() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'pages.register.have_account'.tr,
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppColors.textSecondary,
-          ),
+    return OutlinedButton(
+      onPressed: controller.goToLogin,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        TextButton(
-          onPressed: controller.goToLogin,
-          child: Text(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'pages.register.have_account'.tr,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(width: 4),
+          Text(
             'pages.register.go_login'.tr,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,61 +1,47 @@
-# Flutter Boost
+# Flutter Boost 🚀
 
-[English](./README.md) | [简体中文](./README.zh-CN.md)
+<p align="center">
+  <img src="assets/logo.png" width="120" alt="Flutter Boost Logo">
+</p>
 
-开箱即用的 Flutter 企业级应用脚手架。
+<p align="center">
+  <strong>企业级 Flutter 应用脚手架</strong>
+</p>
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.19+-blue.svg)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.3+-blue.svg)](https://dart.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<p align="center">
+  <a href="./README.md">English</a> •
+  <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <a href="#特性">特性</a> •
+  <a href="#快速开始">快速开始</a> •
+  <a href="#项目结构">项目结构</a> •
+  <a href="#技术栈">技术栈</a> •
+  <a href="#贡献指南">贡献指南</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3.19+-blue.svg" alt="Flutter">
+  <img src="https://img.shields.io/badge/Dart-3.3+-blue.svg" alt="Dart">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Desktop-lightgrey.svg" alt="Platform">
+</p>
+
+---
 
 ## ✨ 特性
 
-- 💡 **Dart 3.3+**: 使用最新 Dart 语言特性，严格类型检查
-- 📦 **模块化**: 基于功能的模块化架构
-- 🎨 **主题系统**: 内置亮色/暗色主题支持
-- 🌐 **国际化**: 使用 GetX 实现中英文切换
-- 🔧 **最佳实践**: 清晰的代码规范和 lint 规则
-- 🧪 **Mock 数据**: 开发友好的模拟数据系统
-- 📱 **跨平台**: 支持 Android、iOS、Web、macOS、Windows、Linux
-
-## 📐 架构设计
-
-```
-lib/
-├── app/                    # 应用配置
-│   ├── bindings/           # 依赖绑定
-│   ├── middlewares/        # 路由中间件
-│   └── routes/             # 路由定义
-├── core/                   # 核心模块
-│   ├── config/             # 配置管理
-│   ├── mock/               # Mock 数据
-│   ├── network/            # HTTP 客户端和拦截器
-│   ├── storage/            # 本地存储（Hive + SharedPreferences）
-│   ├── theme/              # 主题配置
-│   ├── utils/              # 工具类
-│   └── widgets/            # 通用组件
-├── features/               # 功能模块
-│   └── [feature]/
-│       ├── bindings/       # 模块绑定
-│       ├── controllers/    # GetX 控制器
-│       ├── models/         # 数据模型
-│       ├── services/       # API 服务
-│       └── views/          # 页面视图
-└── shared/                 # 共享资源
-    ├── constants/          # 常量定义
-    ├── translations/       # 国际化文件
-    └── types/              # 类型定义
-```
-
-## 🛠️ 技术栈
-
-| 分类 | 技术 |
+| 特性 | 说明 |
 |------|------|
-| 状态管理 | GetX 4.6.6 |
-| 网络请求 | Dio 5.4.0 |
-| 本地存储 | Hive + SharedPreferences |
-| UI 增强 | ScreenUtil、CachedNetworkImage、Shimmer |
-| 日志 | Logger |
+| 🏗️ **模块化架构** | 清晰的三层架构，关注点分离 |
+| 🎨 **主题系统** | 内置亮色/暗色主题，支持持久化 |
+| 🌍 **国际化** | 中英文支持，语言设置持久化 |
+| 📦 **状态管理** | GetX 统一管理状态、路由、依赖 |
+| 🔌 **网络层** | Dio + 拦截器，统一错误处理 |
+| 💾 **本地存储** | Hive + SharedPreferences 双存储方案 |
+| 🧪 **Mock 数据** | 开发模式自动启用，无需后端即可开发 |
+| 📱 **响应式布局** | 自适应手机、平板、桌面端 |
 
 ## 🚀 快速开始
 
@@ -64,10 +50,10 @@ lib/
 - Flutter >= 3.19.0
 - Dart >= 3.3.0
 
-### 安装
+### 安装运行
 
 ```bash
-# 克隆仓库
+# 克隆项目
 git clone https://github.com/your-org/flutter_boost.git
 cd flutter_boost
 
@@ -75,7 +61,10 @@ cd flutter_boost
 make install
 
 # 运行项目
-make run
+make run          # Chrome
+make run-web      # Web (端口 8080)
+make run-ios      # iOS 模拟器
+make run-android  # Android 设备
 ```
 
 ### 开发账户
@@ -85,62 +74,112 @@ make run
 | 用户名 | `admin` |
 | 密码 | `123456` |
 
-> 注意：开发环境默认启用 Mock 模式，使用任意账户密码都可登录成功。
+> 💡 开发模式自动启用 Mock，使用任意账户密码都可登录。
+
+## 📁 项目结构
+
+```
+lib/
+├── app/                      # 应用层
+│   ├── app.dart              # App 入口配置
+│   ├── bindings/             # 全局依赖绑定
+│   ├── middlewares/          # 路由中间件
+│   └── routes/               # 路由定义
+│
+├── core/                     # 核心层
+│   ├── config/               # 环境配置
+│   ├── mock/                 # Mock 数据
+│   ├── network/              # 网络请求
+│   │   ├── http_client.dart  # Dio 封装
+│   │   └── interceptors/     # 拦截器
+│   ├── storage/              # 本地存储
+│   ├── theme/                # 主题配置
+│   ├── utils/                # 工具类
+│   └── widgets/              # 通用组件
+│
+├── features/                 # 功能模块层
+│   ├── auth/                 # 认证模块
+│   │   ├── bindings/         # 依赖绑定
+│   │   ├── controllers/      # 控制器
+│   │   ├── models/           # 数据模型
+│   │   ├── services/         # API 服务
+│   │   └── views/            # 页面视图
+│   ├── home/                 # 首页模块
+│   └── splash/               # 启动页模块
+│
+├── shared/                   # 共享层
+│   ├── constants/            # 常量定义
+│   ├── translations/         # 国际化
+│   └── types/                # 类型定义
+│
+└── main.dart                 # 程序入口
+```
+
+## 🛠️ 技术栈
+
+| 分类 | 技术 | 版本 |
+|------|------|------|
+| 状态管理 | GetX | 4.6.6 |
+| 网络请求 | Dio | 5.4.0 |
+| 本地存储 | Hive | 2.2.3 |
+| 键值存储 | SharedPreferences | 2.2.2 |
+| 屏幕适配 | ScreenUtil | 5.9.0 |
+| 图片缓存 | CachedNetworkImage | 3.3.1 |
+| 日志 | Logger | 2.0.2 |
 
 ## 📝 常用命令
 
 ```bash
-make help          # 显示所有命令
-make install       # 安装依赖
-make run           # 在 Chrome 上运行
-make run-web       # 在 Web 上运行（端口 8080）
-make build-web     # 构建 Web 版本
-make analyze       # 代码分析
-make format        # 格式化代码
-make test          # 运行测试
-make clean         # 清理构建
-make stop          # 停止运行中的应用
+# 开发
+make run              # 运行 (Chrome)
+make run-web          # 运行 (Web 端口 8080)
+make stop             # 停止运行
+
+# 构建
+make build-web        # 构建 Web
+make build-ios        # 构建 iOS
+make build-android    # 构建 Android
+
+# 代码质量
+make analyze          # 代码分析
+make format           # 格式化代码
+make test             # 运行测试
+
+# 清理
+make clean            # 清理构建
+make clean-all        # 清理所有
+```
+
+## 🎨 主题配置
+
+项目支持亮色/暗色主题切换，设置会自动持久化。
+
+```dart
+// 切换主题
+SettingsHelper.changeTheme(ThemeMode.dark);
+
+// 切换语言
+SettingsHelper.toZhCN();
+SettingsHelper.toEnUS();
 ```
 
 ## 🌍 国际化
 
-支持中英文切换，采用结构化 key 命名：
+采用结构化 Key 命名规范：
 
 ```dart
-// Key 格式：分类.页面.元素
+// 格式：分类.页面.元素
 'pages.login.title'.tr           // "登录"
 'common.confirm'.tr              // "确认"
-'validation.email.invalid'.tr   // "邮箱格式不正确"
-```
-
-## 🔧 配置说明
-
-### 环境配置
-
-位于 `lib/core/config/env_config.dart`：
-
-```dart
-EnvConfig.apiBaseUrl    // API 基础地址
-EnvConfig.enableMock    // 启用 Mock 数据
-EnvConfig.enableLog     // 启用日志
-```
-
-### 应用配置
-
-位于 `lib/core/config/app_config.dart`：
-
-```dart
-AppConfig.defaultPadding       // 16.0
-AppConfig.defaultAnimationDuration   // 300ms
-AppConfig.defaultPageSize      // 20
+'validation.email.invalid'.tr    // "邮箱格式不正确"
 ```
 
 ## 📚 文档
 
-- [架构设计文档](docs/Flutter架构设计文档.md)
-- [贡献指南](CONTRIBUTING.md)
+- [贡献指南](CONTRIBUTING.md) - 开发规范与代码风格
+- [架构设计](docs/Flutter架构设计文档.md) - 详细架构说明
 
-## 🤝 参与贡献
+## 🤝 贡献
 
 欢迎贡献！请先阅读 [贡献指南](CONTRIBUTING.md)。
 
@@ -152,9 +191,10 @@ AppConfig.defaultPageSize      // 20
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+[MIT License](LICENSE)
 
 ---
 
-**Made with ❤️ by Flutter Boost Team**
-
+<p align="center">
+  Made with ❤️ by Flutter Boost Team
+</p>

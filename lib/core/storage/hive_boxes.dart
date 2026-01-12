@@ -8,18 +8,18 @@ import '../../shared/constants/storage_keys.dart';
 class HiveBoxes {
   HiveBoxes._();
 
-  static Box? _userBox;
-  static Box? _cacheBox;
-  static Box? _settingsBox;
+  static Box<dynamic>? _userBox;
+  static Box<dynamic>? _cacheBox;
+  static Box<dynamic>? _settingsBox;
 
   /// 用户信息 Box
-  static Box get userBox => _userBox!;
+  static Box<dynamic> get userBox => _userBox!;
 
   /// 缓存数据 Box
-  static Box get cacheBox => _cacheBox!;
+  static Box<dynamic> get cacheBox => _cacheBox!;
 
   /// 设置 Box
-  static Box get settingsBox => _settingsBox!;
+  static Box<dynamic> get settingsBox => _settingsBox!;
 
   /// 初始化所有 Box
   static Future<void> init() async {
