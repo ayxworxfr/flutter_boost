@@ -24,5 +24,11 @@ class AppConstants {
   static const int maxImageSize = 5 * 1024 * 1024; // 5MB
 
   /// 支持的图片格式
-  static const List<String> supportedImageFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+  static const List<String> supportedImageFormats = [
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+  ];
 }

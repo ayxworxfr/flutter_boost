@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_boost/l10n/generated/app_localizations.dart';
 import 'package:intl/intl.dart';
 
 /// 字符串扩展
 extension FlutterBoostStringExtension on String {
   /// 每个单词首字母大写
   String toTitleCase() {
-    return split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return '${word[0].toUpperCase()}${word.substring(1)}';
-    }).join(' ');
+    return split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return '${word[0].toUpperCase()}${word.substring(1)}';
+        })
+        .join(' ');
   }
 
   /// 是否是有效邮箱
@@ -110,22 +112,22 @@ extension DateTimeExtension on DateTime {
   }
 
   /// 友好的时间显示
-  String get timeAgo {
+  String timeAgoString(AppLocalizations l10n) {
     final now = DateTime.now();
     final difference = now.difference(this);
 
     if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()}${'common.years_ago'.tr}';
+      return '${(difference.inDays / 365).floor()}${l10n.commonYearsAgo}';
     } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()}${'common.months_ago'.tr}';
+      return '${(difference.inDays / 30).floor()}${l10n.commonMonthsAgo}';
     } else if (difference.inDays > 0) {
-      return '${difference.inDays}${'common.days_ago'.tr}';
+      return '${difference.inDays}${l10n.commonDaysAgo}';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours}${'common.hours_ago'.tr}';
+      return '${difference.inHours}${l10n.commonHoursAgo}';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}${'common.minutes_ago'.tr}';
+      return '${difference.inMinutes}${l10n.commonMinutesAgo}';
     } else {
-      return 'common.just_now'.tr;
+      return l10n.commonJustNow;
     }
   }
 
@@ -279,4 +281,3 @@ extension WidgetExtension on Widget {
     return Expanded(flex: flex, child: this);
   }
 }
-

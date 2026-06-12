@@ -15,6 +15,9 @@ class StorageKeys {
   /// 是否同意隐私政策
   static const String privacyAgreed = 'privacy_agreed';
 
+  /// 是否有活跃会话（由 AuthService 在登录/登出时同步更新，用于路由守卫同步检查）
+  static const String sessionActive = 'session_active';
+
   // ==================== Hive Box Names ====================
   /// 用户信息 Box
   static const String userBox = 'user_box';
@@ -29,12 +32,10 @@ class StorageKeys {
   /// 当前用户
   static const String currentUser = 'current_user';
 
-  /// Access Token
+  // ==================== Secure Storage Keys ====================
+  /// Access Token（存平台安全区）
   static const String accessToken = 'access_token';
 
-  /// Refresh Token
+  /// Refresh Token（存平台安全区）
   static const String refreshToken = 'refresh_token';
-
-  /// Token 过期时间
-  static const String tokenExpiry = 'token_expiry';
 }

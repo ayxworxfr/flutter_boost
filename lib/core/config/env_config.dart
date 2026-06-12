@@ -2,120 +2,104 @@ import 'package:flutter/foundation.dart';
 
 /// 环境配置
 ///
-/// 管理不同环境下的配置项
-/// 参考 Ant Design Pro 的配置分离设计
+/// 优先从编译时 `--dart-define` 或 `--dart-define-from-file` 注入的值读取，
+/// 缺省时根据 Flutter 构建模式（debug / profile / release）推断。
+///
+/// 推荐用法（开发）：
+///   flutter run --dart-define-from-file=config/dev.json
+///
+/// 推荐用法（CI/CD）：
+///   flutter build apk \
+///     --dart-define=APP_ENV=production \
+///     --dart-define=API_BASE_URL=https://api.example.com/api
 class EnvConfig {
   EnvConfig._();
 
-  /// 初始化（保持兼容性）
-  static Future<void> init() async {
-    // 目前不需要异步初始化
-    // 如果需要加载 .env 文件，可以在这里添加
+  // ─── Compile-time dart-define values ────────────────────
+
+  static const _envName = String.fromEnvironment('APP_ENV');
+  static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const _wsUrl = String.fromEnvironment('WS_URL');
+  static const _staticUrl = String.fromEnvironment('STATIC_URL');
+
+  // ─── Derived environment ─────────────────────────────────
+
+  static Environment get current {
+    if (_envName.isNotEmpty) {
+      return switch (_envName) {
+        'production' => Environment.production,
+        'staging' => Environment.staging,
+        _ => Environment.development,
+      };
+    }
+    // 未注入时根据 Flutter 构建模式推断
+    if (kReleaseMode) return Environment.production;
+    if (kProfileMode) return Environment.staging;
+    return Environment.development;
   }
 
-  /// 当前环境
-  static const Environment current = kReleaseMode
-      ? Environment.production
-      : kProfileMode
-          ? Environment.staging
-          : Environment.development;
-
-  /// 环境名称
   static String get appEnv => current.name;
 
-  /// API 版本
-  static String get apiVersion => 'v1';
-
-  /// API 超时时间（毫秒）
-  static int get apiTimeout => requestTimeout;
-
-  /// 是否为开发环境
   static bool get isDev => current == Environment.development;
-
-  /// 是否为预发环境
   static bool get isStaging => current == Environment.staging;
-
-  /// 是否为生产环境
   static bool get isProd => current == Environment.production;
 
-  /// 是否启用 Mock 数据
+  /// Mock 数据（仅开发环境启用）
   static bool get enableMock => isDev;
 
-  /// 是否启用日志
+  /// 日志输出（非生产环境启用）
   static bool get enableLog => !isProd;
 
-  /// 是否显示调试信息
   static bool get showDebugInfo => isDev;
 
-  /// API 基础地址
+  // ─── URLs ────────────────────────────────────────────────
+
   static String get apiBaseUrl {
-    switch (current) {
-      case Environment.development:
-        return 'http://localhost:3000/api';
-      case Environment.staging:
-        return 'https://staging-api.example.com/api';
-      case Environment.production:
-        return 'https://api.example.com/api';
-    }
+    if (_apiBaseUrl.isNotEmpty) return _apiBaseUrl;
+    return switch (current) {
+      Environment.development => 'http://localhost:3000/api',
+      Environment.staging => 'https://staging-api.example.com/api',
+      Environment.production => 'https://api.example.com/api',
+    };
   }
 
-  /// WebSocket 地址
   static String get wsUrl {
-    switch (current) {
-      case Environment.development:
-        return 'ws://localhost:3000/ws';
-      case Environment.staging:
-        return 'wss://staging-api.example.com/ws';
-      case Environment.production:
-        return 'wss://api.example.com/ws';
-    }
+    if (_wsUrl.isNotEmpty) return _wsUrl;
+    return switch (current) {
+      Environment.development => 'ws://localhost:3000/ws',
+      Environment.staging => 'wss://staging-api.example.com/ws',
+      Environment.production => 'wss://api.example.com/ws',
+    };
   }
 
-  /// 静态资源地址
   static String get staticUrl {
-    switch (current) {
-      case Environment.development:
-        return 'http://localhost:3000/static';
-      case Environment.staging:
-        return 'https://staging-static.example.com';
-      case Environment.production:
-        return 'https://static.example.com';
-    }
+    if (_staticUrl.isNotEmpty) return _staticUrl;
+    return switch (current) {
+      Environment.development => 'http://localhost:3000/static',
+      Environment.staging => 'https://staging-static.example.com',
+      Environment.production => 'https://static.example.com',
+    };
   }
 
-  /// 请求超时时间（毫秒）
-  static int get requestTimeout {
-    switch (current) {
-      case Environment.development:
-        return 30000; // 开发环境延长超时
-      case Environment.staging:
-        return 15000;
-      case Environment.production:
-        return 10000;
-    }
-  }
+  // ─── Timeouts & retries ──────────────────────────────────
 
-  /// 最大重试次数
-  static int get maxRetries {
-    switch (current) {
-      case Environment.development:
-        return 0; // 开发环境不重试，方便调试
-      case Environment.staging:
-        return 2;
-      case Environment.production:
-        return 3;
-    }
-  }
+  /// 请求超时（毫秒）
+  static int get requestTimeout => switch (current) {
+    Environment.development => 30000,
+    Environment.staging => 15000,
+    Environment.production => 10000,
+  };
+
+  static int get apiTimeout => requestTimeout;
+  static const String apiVersion = 'v1';
+
+  /// 最大重试次数（开发环境不重试，方便调试）
+  static int get maxRetries => switch (current) {
+    Environment.development => 0,
+    Environment.staging => 2,
+    Environment.production => 3,
+  };
 }
 
 /// 环境枚举
-enum Environment {
-  /// 开发环境
-  development,
-
-  /// 预发环境
-  staging,
-
-  /// 生产环境
-  production,
-}
+enum Environment { development, staging, production }

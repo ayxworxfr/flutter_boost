@@ -1,24 +1,27 @@
-# Flutter 跨平台应用脚手架 - 架构设计文档
+# Flutter Boost 架构设计文档
+
+> 版本 v1.0.0 · 最后更新 2026-06-12
+
+---
 
 ## 一、项目概述
 
-### 1.1 项目名称
-**flutter_boost** - 个人 Flutter 跨平台应用开发脚手架
+### 1.1 定位
+
+Flutter Boost 是一个**企业级 Flutter 跨平台应用脚手架**，目标是让开发者 Clone 后即可专注于业务逻辑，无需重复搭建基础设施。
 
 ### 1.2 目标平台
-- ✅ Android
-- ✅ iOS
-- ✅ Web
-- ✅ macOS
-- ✅ Windows
-- ✅ Linux
+
+Android · iOS · Web · macOS · Windows · Linux
 
 ### 1.3 设计目标
-1. **快速启动**：Clone 后即可开始业务开发
-2. **结构清晰**：模块化设计，职责分明
-3. **易于扩展**：新增功能模块简单快捷
-4. **代码规范**：统一的编码风格和最佳实践
-5. **开箱即用**：常用功能已封装完毕
+
+| 目标 | 说明 |
+|------|------|
+| **零配置启动** | Clone → `cp config/dev.example.json config/dev.json` → `make run` 即可运行 |
+| **结构可预测** | 每个功能模块目录结构完全一致，新成员无需学习"在哪里找代码" |
+| **强约束轻量** | 通过 Binding + Service 分层强制数据流方向，防止架构腐化 |
+| **跨平台一致** | 同一套代码在 Web / Mobile / Desktop 上行为一致，存储兼容性已处理 |
 
 ---
 
@@ -26,605 +29,458 @@
 
 ### 2.1 核心依赖
 
-| 模块 | 技术方案 | 版本 | 选型理由 |
-|------|---------|------|---------|
-| **状态管理** | GetX | ^4.6.6 | 简单高效，一包搞定状态+路由+依赖注入 |
-| **路由管理** | GetX | ^4.6.6 | 与状态管理统一，学习成本低 |
-| **网络请求** | Dio | ^5.4.0 | 功能强大，拦截器完善 |
-| **本地存储** | Hive | ^2.2.3 | 高性能，支持加密，跨平台 |
-| **轻量存储** | SharedPreferences | ^2.2.2 | 简单配置存储 |
+| 分类 | 方案 | 版本 | 选型理由 |
+|------|------|------|---------|
+| 状态管理 & DI | GetX | ^4.6.6 | `.obs` 响应式变量 + `Get.put/find` 依赖注入，无需 `BuildContext` |
+| 路由 | go_router | ^14.8.1 | 声明式路由，支持 Guard，Web URL 友好，与 Flutter 官方路线对齐 |
+| 网络请求 | Dio | ^5.4.0 | 拦截器完善，支持取消、上传、超时 |
+| 本地存储（复杂对象） | Hive / hive_flutter | ^2.2.3 / ^1.1.0 | 纯 Dart 实现，高性能，跨平台 |
+| 本地存储（原始类型） | SharedPreferences | ^2.2.2 | 轻量，适合 Token / 设置等简单 KV |
+| 数据模型 | freezed + json_serializable | ^2.5.7 / ^6.8.0 | 不可变模型，自动生成 fromJson/toJson/copyWith |
+| 国际化 | flutter_localizations + intl | SDK / ^0.20.0 | 官方方案，ARB 文件 + gen-l10n 代码生成 |
+| 屏幕适配 | flutter_screenutil | ^5.9.0 | 统一设计尺寸 393×852，适配多端 |
+| 图片缓存 | cached_network_image | ^3.3.1 | 内置缓存 + 占位 + 错误兜底 |
+| 日志 | logger | ^2.0.2 | 结构化彩色日志，生产环境静默 |
 
-### 2.2 UI 增强
+### 2.2 为什么 go_router 而不是 GetX 路由
 
-| 模块 | 技术方案 | 版本 | 用途 |
-|------|---------|------|------|
-| **基础 UI** | Flutter Material 3 | SDK 内置 | 官方组件，质量保证 |
-| **图片缓存** | cached_network_image | ^3.3.1 | 网络图片加载与缓存 |
-| **屏幕适配** | flutter_screenutil | ^5.9.0 | 多端屏幕适配 |
-| **骨架屏** | shimmer | ^3.0.0 | 加载占位效果 |
-
-### 2.3 工具类
-
-| 模块 | 技术方案 | 版本 | 用途 |
-|------|---------|------|------|
-| **日志** | logger | ^2.0.2 | 美观的日志输出 |
-| **国际化** | intl | ^0.19.0 | 日期格式化、多语言 |
-
-### 2.4 完整依赖清单
-
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  
-  # 状态管理 + 路由 + 依赖注入
-  get: ^4.6.6
-  
-  # 网络请求
-  dio: ^5.4.0
-  
-  # 本地存储
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
-  shared_preferences: ^2.2.2
-  
-  # UI 增强
-  cached_network_image: ^3.3.1
-  flutter_screenutil: ^5.9.0
-  shimmer: ^3.0.0
-  
-  # 工具
-  logger: ^2.0.2
-  intl: ^0.19.0
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^3.0.0
-  hive_generator: ^2.0.1
-  build_runner: ^2.4.8
-```
+GetX 内置路由与 Flutter 官方 Navigator 2.0 存在兼容性问题，且在 Web 端 URL 管理能力较弱。项目中 **GetX 只用于状态管理和依赖注入**，路由完全交由 go_router 处理。两者职责不重叠，互不干扰。
 
 ---
 
-## 三、项目结构
+## 三、整体架构
+
+### 3.1 三层架构
 
 ```
-flutter_boost/
-├── lib/
-│   ├── main.dart                    # 应用入口
-│   │
-│   ├── app/                         # 📱 应用层
-│   │   ├── app.dart                # GetMaterialApp 配置
-│   │   ├── routes/                 # 路由
-│   │   │   ├── app_pages.dart     # 页面路由注册
-│   │   │   └── app_routes.dart    # 路由名称常量
-│   │   ├── bindings/              # 依赖绑定
-│   │   │   └── app_binding.dart   # 全局依赖注入
-│   │   └── middlewares/           # 路由中间件
-│   │       └── auth_middleware.dart
-│   │
-│   ├── core/                        # 🔧 核心层（与业务无关）
-│   │   ├── network/                # 网络模块
-│   │   │   ├── http_client.dart   # Dio 封装
-│   │   │   ├── api_exception.dart # 异常定义
-│   │   │   └── interceptors/      # 拦截器
-│   │   │       ├── auth_interceptor.dart
-│   │   │       ├── log_interceptor.dart
-│   │   │       └── error_interceptor.dart
-│   │   │
-│   │   ├── storage/                # 存储模块
-│   │   │   ├── storage_service.dart    # 存储服务
-│   │   │   └── hive_boxes.dart         # Hive Box 定义
-│   │   │
-│   │   ├── theme/                  # 主题模块
-│   │   │   ├── app_theme.dart     # 主题配置
-│   │   │   ├── app_colors.dart    # 颜色定义
-│   │   │   └── app_text_styles.dart # 文字样式
-│   │   │
-│   │   ├── utils/                  # 工具类
-│   │   │   ├── logger_util.dart   # 日志工具
-│   │   │   ├── date_util.dart     # 日期工具
-│   │   │   └── validator_util.dart # 验证工具
-│   │   │
-│   │   └── widgets/                # 通用组件
-│   │       ├── app_button.dart    # 按钮
-│   │       ├── app_image.dart     # 图片
-│   │       ├── app_loading.dart   # 加载中
-│   │       ├── app_empty.dart     # 空状态
-│   │       ├── app_error.dart     # 错误状态
-│   │       └── app_refresh_list.dart # 刷新列表
-│   │
-│   ├── features/                    # 🎯 功能模块（按业务划分）
-│   │   ├── auth/                   # 认证模块
-│   │   │   ├── bindings/
-│   │   │   │   └── auth_binding.dart
-│   │   │   ├── controllers/
-│   │   │   │   └── auth_controller.dart
-│   │   │   ├── models/
-│   │   │   │   └── user_model.dart
-│   │   │   ├── services/
-│   │   │   │   └── auth_service.dart
-│   │   │   └── views/
-│   │   │       ├── login_page.dart
-│   │   │       └── register_page.dart
-│   │   │
-│   │   ├── home/                   # 首页模块
-│   │   │   ├── bindings/
-│   │   │   ├── controllers/
-│   │   │   └── views/
-│   │   │
-│   │   ├── profile/                # 个人中心模块
-│   │   │   ├── bindings/
-│   │   │   ├── controllers/
-│   │   │   └── views/
-│   │   │
-│   │   └── settings/               # 设置模块
-│   │       ├── bindings/
-│   │       ├── controllers/
-│   │       └── views/
-│   │
-│   └── shared/                      # 📦 共享资源
-│       ├── constants/              # 常量
-│       │   ├── api_constants.dart # API 常量
-│       │   ├── app_constants.dart # 应用常量
-│       │   └── storage_keys.dart  # 存储 Key
-│       │
-│       ├── extensions/             # 扩展方法
-│       │   ├── string_ext.dart
-│       │   ├── context_ext.dart
-│       │   └── date_ext.dart
-│       │
-│       └── models/                 # 公共模型
-│           ├── api_response.dart  # API 响应模型
-│           └── page_data.dart     # 分页模型
+┌──────────────────────────────────────────────────────────────┐
+│                        Presentation                          │
+│         Views（StatelessWidget / GetView）                   │
+│         Controllers（GetxController）                        │
+│         Feature Widgets（功能内部私有组件）                   │
+├──────────────────────────────────────────────────────────────┤
+│                          Domain                              │
+│         Services（API 调用、业务规则）                        │
+│         Models（freezed 数据模型）                            │
+├──────────────────────────────────────────────────────────────┤
+│                           Data                               │
+│         HttpClient（Dio 封装）                               │
+│         StorageService（Hive + SharedPreferences）           │
+│         MockData（开发模式数据）                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 强制数据流
+
+```
+View
+ │  调用方法 / 读取 .obs 变量
+ ▼
+Controller
+ │  调用 Service（禁止直接访问 HttpClient）
+ ▼
+Service
+ │  调用 HttpClient（禁止包含 UI 逻辑）
+ ▼
+HttpClient ──► 后端 API
+ │
+ ▼
+ApiResponse<T>（freezed 泛型）
+ │
+ ▼
+Service 解包 → Model
+ │
+ ▼
+Controller 更新 .obs → View 自动刷新
+```
+
+**两条铁律：**
+- View 禁止直接调用 Service
+- Controller 禁止包含 `Dio` / `HttpClient` 网络代码
+
+### 3.3 目录结构
+
+```
+lib/
+├── app/
+│   ├── app.dart                    # App 根组件
+│   ├── controllers/
+│   │   └── app_controller.dart     # 全局主题 & 语言（permanent）
+│   └── router/
+│       └── app_router.dart         # go_router 配置 + AppRoutes 常量
 │
-├── assets/                          # 📁 静态资源
-│   ├── images/                     # 图片
-│   ├── fonts/                      # 字体
-│   └── translations/               # 多语言文件（预留）
+├── core/
+│   ├── config/
+│   │   └── env_config.dart         # --dart-define-from-file 读取
+│   ├── l10n/
+│   │   └── l10n_extension.dart     # BuildContext.l10n 扩展
+│   ├── mock/
+│   │   └── mock_data.dart          # Mock API 响应（dev 环境）
+│   ├── network/
+│   │   ├── http_client.dart        # Dio 封装 + 三个拦截器
+│   │   └── api_response.dart       # ApiResponse<T>（freezed）
+│   ├── storage/
+│   │   ├── storage_service.dart    # 统一存储接口
+│   │   └── hive_boxes.dart         # Hive Box 初始化
+│   ├── theme/
+│   │   ├── app_colors.dart         # 颜色 Token
+│   │   ├── app_text_styles.dart    # 文字样式 Token
+│   │   └── app_theme.dart          # Material 3 亮色 / 暗色主题
+│   ├── utils/
+│   │   ├── validator_util.dart     # 表单校验（接收 AppLocalizations）
+│   │   └── logger_util.dart        # LoggerUtil 封装
+│   └── widgets/                    # 共享组件库（见第五节）
 │
-├── docs/                            # 📄 文档
-│   └── 架构设计文档.md
+├── features/
+│   ├── auth/
+│   │   ├── bindings/               # AuthBinding
+│   │   ├── controllers/            # AuthController
+│   │   ├── models/                 # UserModel（freezed）
+│   │   ├── services/               # AuthService
+│   │   └── views/                  # LoginPage、RegisterPage
+│   ├── home/
+│   │   ├── bindings/               # HomeBinding
+│   │   ├── controllers/            # HomeController
+│   │   └── views/                  # HomePage（含 Profile / Settings 标签）
+│   └── splash/
+│       └── views/                  # SplashPage（动画 + Auth 跳转）
 │
-├── test/                            # 🧪 测试
+├── l10n/
+│   ├── app_en.arb                  # 英文字符串
+│   ├── app_zh.arb                  # 中文字符串
+│   └── generated/                  # gen-l10n 输出（勿手动编辑）
 │
-├── pubspec.yaml                     # 依赖配置
-├── analysis_options.yaml            # 代码分析配置
-└── README.md                        # 项目说明
+├── shared/
+│   └── constants/
+│       ├── storage_keys.dart       # Hive / SharedPreferences Key 常量
+│       └── api_constants.dart      # API 路径常量
+│
+└── main.dart                       # 程序入口
 ```
 
 ---
 
 ## 四、核心模块设计
 
-### 4.1 网络请求层 (core/network/)
+### 4.1 应用入口与初始化顺序
 
-#### 4.1.1 设计目标
-- 统一的请求/响应处理
-- Token 自动注入与刷新
-- 统一的错误处理
-- 请求日志记录
-- 支持取消请求
-
-#### 4.1.2 类图
+`main.dart` 中的初始化顺序是强约束，不得随意调整：
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      HttpClient                          │
-│  ───────────────────────────────────────────────────────│
-│  - _dio: Dio                                            │
-│  + get(path, params) → Future<Response>                 │
-│  + post(path, data) → Future<Response>                  │
-│  + put(path, data) → Future<Response>                   │
-│  + delete(path) → Future<Response>                      │
-│  + upload(path, file) → Future<Response>                │
-└─────────────────────────────────────────────────────────┘
-                           │
-                           │ 使用
-                           ▼
-┌─────────────────────────────────────────────────────────┐
-│                     Interceptors                         │
-│  ───────────────────────────────────────────────────────│
-│  ├── AuthInterceptor    # Token 注入、401 处理           │
-│  ├── LogInterceptor     # 请求日志                       │
-│  └── ErrorInterceptor   # 错误统一处理                   │
-└─────────────────────────────────────────────────────────┘
+Storage（Hive + SharedPrefs）
+    ↓
+AppController（permanent，管理主题/语言）
+    ↓
+HttpClient（permanent，Dio 实例）
+    ↓
+AuthService（permanent，持有登录态）
+    ↓
+runApp(App())
 ```
 
-#### 4.1.3 使用示例
+`AuthController` 通过 `AuthBinding` 在路由层懒加载，不在 `main` 中初始化。
+
+App 根组件层级：
 
 ```dart
-// 在 Service 中使用
-class UserService {
-  final HttpClient _http = Get.find<HttpClient>();
-  
-  Future<UserModel> getUserInfo() async {
-    final response = await _http.get('/user/info');
-    return UserModel.fromJson(response.data);
-  }
+ScreenUtilInit(designSize: Size(393, 852))
+  └─ GetX<AppController>          // 响应主题 / 语言变化
+       └─ MaterialApp.router      // go_router + localizationsDelegates
+```
+
+### 4.2 路由系统
+
+路由配置集中在 `lib/app/router/app_router.dart`：
+
+```
+/splash   → SplashPage（无守卫，动画后自动跳转）
+/login    → LoginPage + AuthBinding
+/register → RegisterPage（复用 AuthBinding）
+/home     → HomePage + HomeBinding（守卫：未登录跳 /login）
+```
+
+**守卫逻辑**（`_guard()`）：仅在 `/home` 路由上检查 Token，其余路由无守卫。
+
+**导航 API**：Controller 中统一使用静态方法，不传递 `BuildContext`：
+
+```dart
+AppRouter.go(AppRoutes.home);      // 替换当前路由栈
+AppRouter.push(AppRoutes.register); // 入栈
+AppRouter.pop();                    // 出栈
+```
+
+Binding 在各 `GoRoute.pageBuilder` 内手动调用，不使用 go_router 的 `onEnter`。
+
+### 4.3 状态管理与依赖注入
+
+GetX 在本项目中**只承担两个职责**：
+
+1. **响应式状态**：`.obs`、`Rxn<T>`、`Obx()`
+2. **依赖注入**：`Get.put()`（permanent services）、`Get.lazyPut()`（Binding 内）、`Get.find()`
+
+```dart
+// Controller 中声明状态
+final isLoading = false.obs;
+final currentUser = Rxn<UserModel>();
+final errorMessage = ''.obs;
+
+// View 中响应状态
+Obx(() => controller.isLoading.value
+    ? const AppLoading()
+    : _buildContent())
+```
+
+全局应用状态通过 `AppController` 管理，使用 `Get.find<AppController>()` 获取：
+
+```dart
+final appCtrl = Get.find<AppController>();
+appCtrl.changeTheme(ThemeMode.dark);
+appCtrl.changeLocale(const Locale('zh', 'CN'));
+bool isChinese = appCtrl.isChinese;              // 便捷 getter
+String langName = appCtrl.currentLanguageName;   // 便捷 getter
+```
+
+### 4.4 网络层
+
+`HttpClient` 是 Dio 的封装，持有三个拦截器（注册顺序即执行顺序）：
+
+| 拦截器 | 职责 |
+|--------|------|
+| Auth Interceptor | 请求头注入 `Authorization: Bearer <token>` |
+| Error Interceptor | 将 DioException 映射为统一的 AppException |
+| Log Interceptor | 开发模式下格式化打印请求 / 响应 |
+
+所有 API 调用都返回 `ApiResponse<T>`（freezed 泛型），Service 层负责解包：
+
+```dart
+// Service 示例
+Future<UserModel> login(String username, String password) async {
+  final response = await _http.post<Map<String, dynamic>>(
+    ApiConstants.login,
+    data: {'username': username, 'password': password},
+  );
+  return UserModel.fromJson(response.data!);
 }
 ```
 
----
+**Mock 模式**：`EnvConfig.enableMock` 为 `true`（dev 环境默认）时，Service 在调用 `HttpClient` 之前提前返回 `MockData` 中的数据，后端不可用也能完整运行。
 
-### 4.2 本地存储层 (core/storage/)
+### 4.5 本地存储
 
-#### 4.2.1 设计目标
-- 统一的存储接口
-- 支持加密存储
-- 类型安全
-- 跨平台兼容
+`StorageService` 统一封装 Hive 和 SharedPreferences：
 
-#### 4.2.2 存储方案
+| 存储后端 | 适用场景 | API |
+|---------|---------|-----|
+| SharedPreferences | Token、Theme、Locale 等原始类型 | `getString / setString / getBool / ...` |
+| Hive user_box | 用户信息等复杂对象（JSON Map） | `getUserData / saveUserData` |
+| Hive cache_box | 接口缓存 | `getCacheData / saveCacheData` |
+| Hive settings_box | 应用偏好复杂对象 | `getFromHive / saveToHive` |
 
-| 数据类型 | 存储方案 | 示例 |
+**Web 兼容性**：Hive 在 Web 端将存储的 Map 反序列化为 `LinkedMap<dynamic, dynamic>`，`StorageService.getFromHive` 中已自动归一化为 `Map<String, dynamic>`，调用方无需处理。
+
+所有存储 Key 常量集中在 `lib/shared/constants/storage_keys.dart`，禁止在业务代码中硬编码字符串 Key。
+
+### 4.6 国际化
+
+采用 flutter_localizations 官方方案，ARB 文件 + `flutter gen-l10n` 代码生成：
+
+```
+lib/l10n/app_en.arb  ──┐
+lib/l10n/app_zh.arb  ──┴─► make l10n ──► lib/l10n/generated/app_localizations.dart
+```
+
+**Key 命名规范**：`groupNameKey`（camelCase）
+
+| 分组前缀 | 适用范围 | 示例 |
 |---------|---------|------|
-| 简单配置 | SharedPreferences | 主题模式、语言设置 |
-| 用户信息 | Hive Box | Token、用户资料 |
-| 复杂数据 | Hive Box | 缓存数据、草稿 |
+| `common` | 全局通用 | `commonAppName`、`commonCancel` |
+| `pages<Page>` | 页面级字符串 | `pagesLoginTitle`、`pagesHomeWelcome` |
+| `validation` | 表单校验提示 | `validationRequired`、`validationEmailInvalid` |
+| `widgets` | 共享组件字符串 | `widgetsErrorNetworkTitle` |
 
-#### 4.2.3 使用示例
+**访问方式**：
 
 ```dart
-// 存储服务
-class StorageService extends GetxService {
-  // 简单存储
-  Future<void> setThemeMode(String mode) async {
-    await _prefs.setString(StorageKeys.themeMode, mode);
-  }
-  
-  // Hive 存储
-  Future<void> saveUser(UserModel user) async {
-    await _userBox.put('current_user', user);
-  }
-}
+// View 中（context 始终可用）
+Text(context.l10n.commonAppName)
+
+// 私有 helper 方法（必须显式声明类型）
+Widget _buildForm(BuildContext context, AppLocalizations l10n) { ... }
+// ⚠️ 不声明类型会推断为 dynamic，导致编译错误
+```
+
+### 4.7 主题系统
+
+`AppTheme.light` 和 `AppTheme.dark` 均基于 Material 3，通过 `AppController` 响应式切换：
+
+```
+用户触发切换
+    ↓
+appCtrl.changeTheme(ThemeMode.dark)
+    ↓
+持久化到 SharedPreferences
+    ↓
+GetX 响应式更新 → MaterialApp 重建
+```
+
+颜色和样式均使用 Token，禁止在业务代码中出现 `Color(0xFF...)` 硬编码：
+
+```dart
+// ✅
+color: AppColors.primary
+color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary
+
+// ❌
+color: Color(0xFF2196F3)
+color: Colors.grey
 ```
 
 ---
 
-### 4.3 主题系统 (core/theme/)
+## 五、共享组件库
 
-#### 4.3.1 设计目标
-- 支持亮色/暗色主题
-- 支持跟随系统
-- 主题持久化
-- 统一的颜色/样式定义
+`lib/core/widgets/` 下的组件是对 Flutter 原始组件的项目级封装。**业务代码禁止直接使用** `ElevatedButton`、`TextFormField`、`CircularProgressIndicator`、`ListView` 等原始组件。
 
-#### 4.3.2 主题切换流程
+### 5.1 组件一览
+
+| 组件 | 文件 | 核心参数 |
+|------|------|---------|
+| `AppButton` | app_button.dart | `type`(primary/secondary/text/danger)、`size`(small/medium/large)、`isLoading`、`expanded`、`borderRadius` |
+| `AppTextField` | app_text_field.dart | `label`、`hint`、`prefixIcon`、`obscureText`、`validator`、`suffixIcon` |
+| `AppLoading` | app_loading.dart | `message`、`size`、`showOverlay`；静态方法 `.page()`、`.inline()` |
+| `AppShimmerLoading` | app_loading.dart | `child`（骨架屏流光动画包装器） |
+| `AppListSkeleton` | app_loading.dart | `itemCount`、`itemHeight`、`showAvatar`、`showSubtitle` |
+| `AppEmpty` | app_empty.dart | 工厂构造器：`.noData()`、`.noSearchResult()`、`.noNetwork()`、`.noMessage()`、`.noNotification()`、`.noFavorite()` |
+| `AppError` | app_error.dart | 工厂构造器：`.network()`、`.server()`、`.loadFailed()`、`.unauthorized()`、`.forbidden()`、`.notFound()`、`.timeout()` |
+| `AppRefreshList<T>` | app_refresh_list.dart | `state`、`hasMore`、`isLoadingMore`、`onRefresh`、`onLoadMore`、`itemBuilder` |
+| `AppImage` | app_image.dart | `url`、`width`、`height`、`fit`、`borderRadius` |
+| `AppAvatar` | app_image.dart | `url`、`radius`、`name`（首字母降级显示） |
+
+### 5.2 页面状态决策树
 
 ```
-用户切换主题
-     │
-     ▼
-ThemeController.changeTheme()
-     │
-     ▼
-StorageService.saveThemeMode()  ──► 持久化
-     │
-     ▼
-Get.changeThemeMode()  ──► UI 更新
+请求发起中？
+    ├─ YES → AppLoading（或 AppListSkeleton）
+    └─ NO
+         ↓
+    有错误？
+         ├─ YES → AppError.network() / .server() / ...
+         └─ NO
+              ↓
+         数据为空？
+              ├─ YES → AppEmpty.noData() / .noSearchResult() / ...
+              └─ NO → 正常内容
 ```
 
-#### 4.3.3 颜色定义示例
+### 5.3 AppButton 说明
+
+表单场景中 `borderRadius` 应设为 `12` 以与 `AppTextField`（12px 圆角）保持一致：
 
 ```dart
-class AppColors {
-  // 主色
-  static const Color primary = Color(0xFF2196F3);
-  static const Color primaryDark = Color(0xFF1976D2);
-  
-  // 语义色
-  static const Color success = Color(0xFF4CAF50);
-  static const Color warning = Color(0xFFFF9800);
-  static const Color error = Color(0xFFF44336);
-  
-  // 中性色
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color divider = Color(0xFFE0E0E0);
-  static const Color background = Color(0xFFF5F5F5);
-}
+AppButton(
+  text: l10n.pagesLoginSubmit,
+  isLoading: controller.isLoading.value,
+  onPressed: controller.login,
+  expanded: true,
+  size: AppButtonSize.large,
+  borderRadius: 12,   // 表单中使用 12，其他场景默认 8
+)
 ```
 
 ---
 
-### 4.4 路由管理 (app/routes/)
+## 六、功能模块规范
 
-#### 4.4.1 设计目标
-- 命名路由，避免硬编码
-- 支持路由参数
-- 支持路由守卫（登录拦截）
-- 支持页面过渡动画
+### 6.1 目录结构（强制）
 
-#### 4.4.2 路由定义示例
-
-```dart
-// app_routes.dart - 路由名称常量
-abstract class AppRoutes {
-  static const String splash = '/splash';
-  static const String login = '/login';
-  static const String register = '/register';
-  static const String home = '/home';
-  static const String profile = '/profile';
-  static const String settings = '/settings';
-}
-
-// app_pages.dart - 页面注册
-class AppPages {
-  static final pages = [
-    GetPage(
-      name: AppRoutes.login,
-      page: () => const LoginPage(),
-      binding: AuthBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.home,
-      page: () => const HomePage(),
-      binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],  // 需要登录
-    ),
-  ];
-}
-```
-
-#### 4.4.3 路由守卫
-
-```dart
-class AuthMiddleware extends GetMiddleware {
-  @override
-  RouteSettings? redirect(String? route) {
-    final authService = Get.find<AuthService>();
-    if (!authService.isLoggedIn) {
-      return const RouteSettings(name: AppRoutes.login);
-    }
-    return null;
-  }
-}
-```
-
----
-
-### 4.5 通用组件 (core/widgets/)
-
-#### 4.5.1 组件清单
-
-| 组件 | 文件 | 功能 |
-|------|------|------|
-| AppButton | app_button.dart | 统一风格的按钮 |
-| AppImage | app_image.dart | 带缓存、占位、错误处理的图片 |
-| AppLoading | app_loading.dart | 加载中状态 |
-| AppEmpty | app_empty.dart | 空状态 |
-| AppError | app_error.dart | 错误状态 |
-| AppRefreshList | app_refresh_list.dart | 下拉刷新 + 上拉加载列表 |
-
-#### 4.5.2 状态组件设计
+每个功能模块的目录结构固定，不得缺少或新增目录：
 
 ```
-┌─────────────────────────────────────────┐
-│              页面状态组件                 │
-├─────────────────────────────────────────┤
-│                                         │
-│   isLoading?  ──► AppLoading            │
-│       │                                 │
-│       ▼                                 │
-│   hasError?   ──► AppError              │
-│       │                                 │
-│       ▼                                 │
-│   isEmpty?    ──► AppEmpty              │
-│       │                                 │
-│       ▼                                 │
-│   正常内容                               │
-│                                         │
-└─────────────────────────────────────────┘
+features/<module>/
+├── bindings/
+│   └── <module>_binding.dart      # Get.lazyPut 所有依赖
+├── controllers/
+│   └── <module>_controller.dart   # 持有 UI 状态，调用 Service
+├── models/
+│   └── <model>_model.dart         # @freezed + @JsonSerializable
+├── services/
+│   └── <module>_service.dart      # 调用 HttpClient，返回 Model
+├── views/
+│   └── <page>_page.dart           # GetView<Controller>
+└── widgets/                        # 本模块私有组件（不可被其他模块引用）
 ```
 
----
+### 6.2 新增模块步骤
 
-## 五、功能模块设计
+1. 按上述结构创建目录和文件
+2. 在 `app/router/app_router.dart` 注册 `GoRoute`，在 `pageBuilder` 内调用 Binding
+3. 在 `AppRoutes` 中添加路径常量
+4. 如有新 ARB 字符串，添加到 `app_en.arb` 和 `app_zh.arb`，运行 `make l10n`
+5. 如有新 Model，添加 `@freezed` 注解，运行 `make generate`
 
-### 5.1 模块结构规范
-
-每个功能模块遵循以下结构：
-
-```
-features/
-└── module_name/
-    ├── bindings/           # 依赖绑定
-    │   └── xxx_binding.dart
-    ├── controllers/        # 控制器（业务逻辑）
-    │   └── xxx_controller.dart
-    ├── models/             # 数据模型
-    │   └── xxx_model.dart
-    ├── services/           # 服务层（API 调用）
-    │   └── xxx_service.dart
-    └── views/              # 页面视图
-        ├── xxx_page.dart
-        └── widgets/        # 页面私有组件
-```
-
-### 5.2 数据流向
-
-```
-View (UI)
-    │
-    │ 调用方法 / 监听状态
-    ▼
-Controller (业务逻辑)
-    │
-    │ 调用服务
-    ▼
-Service (API 调用)
-    │
-    │ 发起请求
-    ▼
-HttpClient (网络层)
-    │
-    │ 返回数据
-    ▼
-Model (数据模型)
-    │
-    │ 更新状态
-    ▼
-View (UI 自动刷新)
-```
-
-### 5.3 Controller 模板
+### 6.3 Controller 模板
 
 ```dart
 class XxxController extends GetxController {
   final XxxService _service = Get.find<XxxService>();
-  
-  // 状态
+
   final isLoading = false.obs;
   final errorMessage = ''.obs;
-  final dataList = <XxxModel>[].obs;
-  
+  final items = <XxxModel>[].obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchData();
   }
-  
+
   Future<void> fetchData() async {
+    isLoading.value = true;
+    errorMessage.value = '';
     try {
-      isLoading.value = true;
-      errorMessage.value = '';
-      
-      final result = await _service.getData();
-      dataList.value = result;
-    } catch (e) {
-      errorMessage.value = e.toString();
+      items.value = await _service.getList();
+    } on AppException catch (e) {
+      errorMessage.value = e.message;
+    } catch (_) {
+      errorMessage.value = '未知错误';
     } finally {
       isLoading.value = false;
     }
   }
-  
-  Future<void> refresh() async {
-    await fetchData();
+}
+```
+
+### 6.4 Binding 模板
+
+```dart
+class XxxBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut<XxxService>(() => XxxService());
+    Get.lazyPut<XxxController>(() => XxxController());
   }
 }
 ```
 
 ---
 
-## 六、编码规范
+## 七、环境配置
 
-### 6.1 命名规范
+通过 `--dart-define-from-file` 注入，在 `EnvConfig` 中用 `String.fromEnvironment()` 读取：
 
-| 类型 | 规范 | 示例 |
+| 文件 | 环境 | 说明 |
 |------|------|------|
-| 文件名 | 小写 + 下划线 | `user_model.dart` |
-| 类名 | 大驼峰 | `UserModel` |
-| 变量名 | 小驼峰 | `userName` |
-| 常量 | 小驼峰 | `apiBaseUrl` |
-| 私有变量 | 下划线开头 | `_isLoading` |
+| `config/dev.json` | development | 本地开发，Mock 自动开启 |
+| `config/staging.json` | staging | 预发布，连接真实后端 |
+| `config/prod.json` | production | 生产，Mock 关闭 |
 
-### 6.2 文件组织
-
-```dart
-// 1. 导入顺序
-import 'dart:xxx';                    // Dart 内置
-import 'package:flutter/xxx';         // Flutter SDK
-import 'package:get/get.dart';        // 第三方包
-import 'package:flutter_boost/xxx';    // 项目内部
-
-// 2. 类内部顺序
-class MyClass {
-  // 常量
-  static const xxx = '';
-  
-  // 静态变量
-  static var xxx;
-  
-  // 实例变量
-  final xxx;
-  var xxx;
-  
-  // 构造函数
-  MyClass();
-  
-  // 生命周期方法
-  @override
-  void onInit() {}
-  
-  // 公共方法
-  void publicMethod() {}
-  
-  // 私有方法
-  void _privateMethod() {}
-}
-```
-
-### 6.3 注释规范
-
-```dart
-/// 用户模型
-/// 
-/// 包含用户的基本信息
-class UserModel {
-  /// 用户 ID
-  final int id;
-  
-  /// 用户名
-  final String name;
-}
-```
+三个配置文件均已加入 `.gitignore`，只有 `config/dev.example.json` 提交到仓库。
 
 ---
 
-## 七、开发流程
-
-### 7.1 新增功能模块
-
-1. 在 `features/` 下创建模块目录
-2. 创建 Model（如需要）
-3. 创建 Service（API 调用）
-4. 创建 Controller（业务逻辑）
-5. 创建 Binding（依赖绑定）
-6. 创建 View（页面视图）
-7. 在 `app_pages.dart` 注册路由
-
-### 7.2 新增 API 接口
-
-1. 在对应 Service 中添加方法
-2. 定义请求/响应 Model
-3. 在 Controller 中调用
-4. 处理错误情况
-
-### 7.3 新增通用组件
-
-1. 在 `core/widgets/` 创建组件文件
-2. 组件应无业务依赖
-3. 提供必要的参数配置
-4. 编写使用示例注释
-
----
-
-## 八、待办事项
-
-- [x] 完成架构设计文档
-- [x] 安装 Flutter 环境 (v3.35.0)
-- [ ] 初始化项目
-- [ ] 实现核心网络层
-- [ ] 实现存储层
-- [ ] 实现主题系统
-- [ ] 实现路由系统
-- [ ] 实现通用组件
-- [ ] 实现认证模块示例
-- [ ] 实现首页模块示例
-- [ ] 编写 README
-
----
-
-## 九、版本记录
+## 八、版本记录
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| v0.1.0 | 2026-01-12 | 初始架构设计 |
-| v0.2.0 | 2026-01-12 | 安装 Flutter 3.35.0 环境，配置 Web 支持 |
-
----
-
-*文档维护：持续更新中...*
-
+| v0.1.0 | 2026-01-12 | 初始架构设计（GetX 路由方案） |
+| v1.0.0 | 2026-06-12 | 全面重构：go_router 替换 GetX 路由，新增共享组件库，Dart 3 records，ARB 国际化，暗色主题完善 |

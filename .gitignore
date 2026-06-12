@@ -5,11 +5,12 @@
 *.swp
 .DS_Store
 
-# Environment variables
-# .env  # 已移除，允许提交 .env 文件
-.env.local
-.env.*.local
-!.env.example
+# 环境配置（dart-define-from-file）
+# config/*.json 包含 API URL 等配置，生产项目中应加入 gitignore
+# 提交 *.example.json 作为模板
+config/dev.json
+config/staging.json
+config/prod.json
 .atom/
 .build/
 .buildlog/

@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validator_util.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_text_field.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../controllers/auth_controller.dart';
 
 /// 登录页面
+///
+/// 亮色模式：品牌紫渐变背景 + 白色卡片
+/// 暗色模式：同色系深紫渐变背景 + 深紫卡片，所有色值来自 AppColors.brandPurple* token
 class LoginPage extends GetView<AuthController> {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColors = isDark
+        ? [AppColors.brandPurpleDark, AppColors.brandPurpleDarkEnd]
+        : [AppColors.brandPurple, AppColors.brandPurpleDeep];
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
+      body: DecoratedBox(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-            ],
+            colors: bgColors,
           ),
         ),
         child: SafeArea(
@@ -32,11 +42,9 @@ class LoginPage extends GetView<AuthController> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo 卡片
-                    _buildLogoCard(),
+                    _buildLogoCard(l10n),
                     const SizedBox(height: 32),
-                    // 登录表单卡片
-                    _buildFormCard(context),
+                    _buildFormCard(context, l10n, isDark),
                   ],
                 ),
               ),
@@ -47,7 +55,7 @@ class LoginPage extends GetView<AuthController> {
     );
   }
 
-  Widget _buildLogoCard() {
+  Widget _buildLogoCard(AppLocalizations l10n) {
     return Column(
       children: [
         Container(
@@ -71,9 +79,9 @@ class LoginPage extends GetView<AuthController> {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Flutter Boost',
-          style: TextStyle(
+        Text(
+          l10n.commonAppName,
+          style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -82,7 +90,7 @@ class LoginPage extends GetView<AuthController> {
         ),
         const SizedBox(height: 4),
         Text(
-          '企业级 Flutter 脚手架',
+          l10n.commonAppTagline,
           style: TextStyle(
             fontSize: 14,
             color: Colors.white.withValues(alpha: 0.8),
@@ -92,16 +100,27 @@ class LoginPage extends GetView<AuthController> {
     );
   }
 
-  Widget _buildFormCard(BuildContext context) {
+  Widget _buildFormCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: isDark ? AppColors.brandPurpleSurface : Colors.white,
         borderRadius: BorderRadius.circular(24),
+        border: isDark
+            ? Border.all(
+                color: AppColors.brandPurpleBorder.withValues(alpha: 0.25),
+              )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
+            color: isDark
+                ? AppColors.brandPurpleDark.withValues(alpha: 0.6)
+                : Colors.black.withValues(alpha: 0.1),
+            blurRadius: isDark ? 30 : 20,
             offset: const Offset(0, 10),
           ),
         ],
@@ -111,134 +130,106 @@ class LoginPage extends GetView<AuthController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 欢迎文字
             Text(
-              'pages.login.welcome'.tr,
-              style: const TextStyle(
+              l10n.pagesLoginWelcome,
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'pages.login.subtitle'.tr,
-              style: const TextStyle(
+              l10n.pagesLoginSubtitle,
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: isDark
+                    ? AppColors.brandPurpleSecondaryText
+                    : AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 24),
-
-            // 用户名输入框
-            _buildTextField(
+            AppTextField(
               controller: controller.usernameController,
-              label: 'pages.login.username'.tr,
-              hint: 'pages.login.username_hint'.tr,
-              icon: Icons.person_outline_rounded,
-              validator: ValidatorUtil.validateUsername,
+              label: l10n.pagesLoginUsername,
+              hint: l10n.pagesLoginUsernameHint,
+              prefixIcon: Icons.person_outline_rounded,
+              validator: ValidatorUtil.username(l10n),
+              fillColor: isDark ? AppColors.brandPurpleSurfaceInput : null,
+              borderColor: isDark
+                  ? AppColors.brandPurpleBorder.withValues(alpha: 0.35)
+                  : null,
             ),
             const SizedBox(height: 16),
-
-            // 密码输入框
-            Obx(() => _buildTextField(
-                  controller: controller.passwordController,
-                  label: 'pages.login.password'.tr,
-                  hint: 'pages.login.password_hint'.tr,
-                  icon: Icons.lock_outline_rounded,
-                  obscureText: !controller.isPasswordVisible.value,
-                  validator: ValidatorUtil.validatePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      controller.isPasswordVisible.value
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: controller.togglePasswordVisibility,
+            Obx(
+              () => AppTextField(
+                controller: controller.passwordController,
+                label: l10n.pagesLoginPassword,
+                hint: l10n.pagesLoginPasswordHint,
+                prefixIcon: Icons.lock_outline_rounded,
+                obscureText: !controller.isPasswordVisible.value,
+                validator: ValidatorUtil.password(l10n),
+                fillColor: isDark ? AppColors.brandPurpleSurfaceInput : null,
+                borderColor: isDark
+                    ? AppColors.brandPurpleBorder.withValues(alpha: 0.35)
+                    : null,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    controller.isPasswordVisible.value
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    color: isDark
+                        ? AppColors.brandPurpleSecondaryText
+                        : AppColors.textSecondary,
                   ),
-                  onSubmitted: (_) => controller.login(),
-                )),
-
-            // 错误信息
+                  onPressed: controller.togglePasswordVisibility,
+                ),
+                onFieldSubmitted: (_) => controller.login(),
+              ),
+            ),
             _buildErrorMessage(),
             const SizedBox(height: 24),
-
-            // 登录按钮
-            _buildLoginButton(),
-            const SizedBox(height: 16),
-
-            // 分割线
-            Row(
-              children: [
-                Expanded(child: Divider(color: Colors.grey.shade300)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    'OR',
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                Expanded(child: Divider(color: Colors.grey.shade300)),
-              ],
+            Obx(
+              () => AppButton(
+                text: l10n.pagesLoginSubmit,
+                isLoading: controller.isLoading.value,
+                onPressed: controller.login,
+                expanded: true,
+                size: AppButtonSize.large,
+                borderRadius: 12,
+              ),
             ),
             const SizedBox(height: 16),
-
-            // 注册入口
-            _buildRegisterEntry(),
+            _buildDivider(l10n, isDark),
+            const SizedBox(height: 16),
+            _buildRegisterEntry(l10n, isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool obscureText = false,
-    String? Function(String?)? validator,
-    Widget? suffixIcon,
-    void Function(String)? onSubmitted,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator: validator,
-      textInputAction:
-          onSubmitted != null ? TextInputAction.done : TextInputAction.next,
-      onFieldSubmitted: onSubmitted,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.textSecondary),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+  Widget _buildDivider(AppLocalizations l10n, bool isDark) {
+    final dividerColor = isDark
+        ? AppColors.brandPurpleDivider.withValues(alpha: 0.6)
+        : Colors.grey.shade300;
+    final labelColor = isDark
+        ? AppColors.brandPurpleSecondaryText
+        : Colors.grey.shade500;
+    return Row(
+      children: [
+        Expanded(child: Divider(color: dividerColor)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            l10n.commonOr,
+            style: TextStyle(color: labelColor, fontSize: 12),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error, width: 2),
-        ),
-      ),
+        Expanded(child: Divider(color: dividerColor)),
+      ],
     );
   }
 
@@ -262,10 +253,7 @@ class LoginPage extends GetView<AuthController> {
               Expanded(
                 child: Text(
                   controller.errorMessage.value,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: AppColors.error, fontSize: 13),
                 ),
               ),
             ],
@@ -275,60 +263,33 @@ class LoginPage extends GetView<AuthController> {
     });
   }
 
-  Widget _buildLoginButton() {
-    return Obx(() => SizedBox(
-          height: 50,
-          child: ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.login,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: controller.isLoading.value
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(
-                    'pages.login.submit'.tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
-        ));
-  }
-
-  Widget _buildRegisterEntry() {
+  Widget _buildRegisterEntry(AppLocalizations l10n, bool isDark) {
     return OutlinedButton(
       onPressed: controller.goToRegister,
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark
+              ? AppColors.brandPurpleBorder.withValues(alpha: 0.45)
+              : AppColors.primary,
         ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'pages.login.no_account'.tr,
-            style: const TextStyle(color: AppColors.textSecondary),
+            l10n.pagesLoginNoAccount,
+            style: TextStyle(
+              color: isDark
+                  ? AppColors.brandPurpleSecondaryText
+                  : AppColors.textSecondary,
+            ),
           ),
           const SizedBox(width: 4),
           Text(
-            'pages.login.go_register'.tr,
+            l10n.pagesLoginGoRegister,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ],

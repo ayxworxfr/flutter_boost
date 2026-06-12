@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 应用颜色定义
-/// 
+///
 /// 统一管理应用中使用的所有颜色
 abstract class AppColors {
   // ==================== 主色调 ====================
@@ -95,6 +95,36 @@ abstract class AppColors {
     colors: [secondary, secondaryDark],
   );
 
+  // ==================== 品牌紫色系（登录页 & 首页 Hero） ====================
+  // 亮色模式：鲜艳渐变，作为全页背景或卡片背景
+  /// 亮色渐变起点（蓝紫）
+  static const Color brandPurple = Color(0xFF667eea);
+
+  /// 亮色渐变终点（深紫）
+  static const Color brandPurpleDeep = Color(0xFF764ba2);
+
+  // 暗色模式：偏深但保持品牌饱和度，能在深色背景上"浮"出来体现层次
+  /// 暗色渐变起点（深靛蓝）
+  static const Color brandPurpleDark = Color(0xFF3730A3);
+
+  /// 暗色渐变终点（深紫罗兰）
+  static const Color brandPurpleDarkEnd = Color(0xFF5B21B6);
+
+  /// 暗色模式：紫色场景下的卡片底色（比渐变终点稍亮，体现卡片elevation）
+  static const Color brandPurpleSurface = Color(0xFF1A1645);
+
+  /// 暗色模式：紫色卡片上的输入框填充色（比卡片稍亮）
+  static const Color brandPurpleSurfaceInput = Color(0xFF231F5A);
+
+  /// 暗色模式：紫色场景的边框色
+  static const Color brandPurpleBorder = Color(0xFF6B5BD6);
+
+  /// 暗色模式：紫色场景的次要文字色（带紫色调的浅灰）
+  static const Color brandPurpleSecondaryText = Color(0xFFA49AC8);
+
+  /// 暗色模式：紫色场景的分割线色
+  static const Color brandPurpleDivider = Color(0xFF3E3478);
+
   // ==================== 其他 ====================
   /// 遮罩层颜色
   static const Color overlay = Color(0x80000000);
@@ -105,4 +135,3 @@ abstract class AppColors {
   /// 透明色
   static const Color transparent = Colors.transparent;
 }
-

@@ -1,189 +1,348 @@
 # Flutter Boost 🚀
 
 <p align="center">
-  <img src="assets/logo.png" width="120" alt="Flutter Boost Logo">
+  <strong>Enterprise-grade Flutter Cross-platform Scaffold</strong><br>
+  Production-ready from day one — focus on your business logic, not boilerplate
 </p>
 
 <p align="center">
-  <strong>企业级 Flutter 应用脚手架</strong>
+  <a href="README.zh-CN.md">中文</a> •
+  <a href="#features">Features</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#project-structure">Project Structure</a> •
+  <a href="#core-modules">Core Modules</a> •
+  <a href="#tech-stack">Tech Stack</a>
 </p>
 
 <p align="center">
-  <a href="#特性">特性</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#项目结构">项目结构</a> •
-  <a href="#技术栈">技术栈</a> •
-  <a href="#贡献指南">贡献指南</a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Flutter-3.19+-blue.svg" alt="Flutter">
-  <img src="https://img.shields.io/badge/Dart-3.3+-blue.svg" alt="Dart">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/Flutter-3.x-blue.svg" alt="Flutter">
+  <img src="https://img.shields.io/badge/Dart-3.9+-blue.svg" alt="Dart">
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Desktop-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
 ---
 
-## ✨ 特性
+## ✨ Features
 
-| 特性 | 说明 |
-|------|------|
-| 🏗️ **模块化架构** | 清晰的三层架构，关注点分离 |
-| 🎨 **主题系统** | 内置亮色/暗色主题，支持持久化 |
-| 🌍 **国际化** | 中英文支持，语言设置持久化 |
-| 📦 **状态管理** | GetX 统一管理状态、路由、依赖 |
-| 🔌 **网络层** | Dio + 拦截器，统一错误处理 |
-| 💾 **本地存储** | Hive + SharedPreferences 双存储方案 |
-| 🧪 **Mock 数据** | 开发模式自动启用，无需后端即可开发 |
-| 📱 **响应式布局** | 自适应手机、平板、桌面端 |
+| Feature | Description |
+|---------|-------------|
+| 🏗️ **3-Layer Architecture** | Presentation → Domain → Data with clear separation of concerns |
+| 🎨 **Theme System** | Material 3 light/dark themes with automatic persistence |
+| 🌍 **Internationalization** | flutter_localizations + ARB files, runtime locale switching |
+| 📦 **State Management** | GetX exclusively for controllers and dependency injection |
+| 🛣️ **Declarative Routing** | go_router with auth guard, automatic redirect on login state change |
+| 🔌 **Network Layer** | Dio wrapper with token injection, error normalization, and request logging |
+| 💾 **Local Storage** | Hive (complex objects) + SharedPreferences (primitives) dual storage |
+| 🧪 **Mock Mode** | Auto-enabled in dev environment — run the full app without a backend |
+| 📐 **Shared Widget Library** | AppButton / AppTextField / AppLoading / AppEmpty and more, ready to use |
+| 📱 **Responsive Layout** | ScreenUtil adaptive design for phone, tablet, and desktop |
 
-## 🚀 快速开始
+---
 
-### 环境要求
+## 🚀 Quick Start
 
-- Flutter >= 3.19.0
-- Dart >= 3.3.0
+### Prerequisites
 
-### 安装运行
+- Flutter SDK (Dart `^3.9.0`)
+- Chrome (recommended for web development)
+
+### Installation
 
 ```bash
-# 克隆项目
+# 1. Clone the repository
 git clone https://github.com/your-org/flutter_boost.git
 cd flutter_boost
 
-# 安装依赖
+# 2. Copy and configure the dev environment file
+cp config/dev.example.json config/dev.json
+
+# 3. Install dependencies
 make install
 
-# 运行项目
-make run          # Chrome
-make run-web      # Web (端口 8080)
-make run-ios      # iOS 模拟器
-make run-android  # Android 设备
+# 4. Run (defaults to Chrome)
+make run
 ```
 
-### 开发账户
+All common tasks are wrapped in the `Makefile`. Prefer `make` commands over raw `flutter` commands.
 
-| 字段 | 值 |
-|------|-----|
-| 用户名 | `admin` |
-| 密码 | `123456` |
+### Dev Credentials
 
-> 💡 开发模式自动启用 Mock，使用任意账户密码都可登录。
+Mock mode is automatically enabled in development. The login page pre-fills these credentials:
 
-## 📁 项目结构
+| Field | Value |
+|-------|-------|
+| Username | `admin` |
+| Password | `123456` |
+
+---
+
+## 📁 Project Structure
 
 ```
 lib/
-├── app/                      # 应用层
-│   ├── app.dart              # App 入口配置
-│   ├── bindings/             # 全局依赖绑定
-│   ├── middlewares/          # 路由中间件
-│   └── routes/               # 路由定义
+├── app/                          # Application layer
+│   ├── app.dart                  # App root (ScreenUtil + GetX + MaterialApp.router)
+│   ├── controllers/              # AppController (global theme & locale state)
+│   └── router/                   # app_router.dart (go_router config, AppRoutes constants)
 │
-├── core/                     # 核心层
-│   ├── config/               # 环境配置
-│   ├── mock/                 # Mock 数据
-│   ├── network/              # 网络请求
-│   │   ├── http_client.dart  # Dio 封装
-│   │   └── interceptors/     # 拦截器
-│   ├── storage/              # 本地存储
-│   ├── theme/                # 主题配置
-│   ├── utils/                # 工具类
-│   └── widgets/              # 通用组件
+├── core/                         # Core infrastructure
+│   ├── config/                   # env_config.dart (reads --dart-define-from-file values)
+│   ├── l10n/                     # l10n_extension.dart (context.l10n extension)
+│   ├── mock/                     # mock_data.dart (mock API responses)
+│   ├── network/                  # http_client.dart, api_response.dart
+│   ├── storage/                  # storage_service.dart, hive_boxes.dart
+│   ├── theme/                    # app_colors.dart, app_text_styles.dart, app_theme.dart
+│   ├── utils/                    # validator_util.dart, logger_util.dart, etc.
+│   └── widgets/                  # Shared widget library (see below)
 │
-├── features/                 # 功能模块层
-│   ├── auth/                 # 认证模块
-│   │   ├── bindings/         # 依赖绑定
-│   │   ├── controllers/      # 控制器
-│   │   ├── models/           # 数据模型
-│   │   ├── services/         # API 服务
-│   │   └── views/            # 页面视图
-│   ├── home/                 # 首页模块
-│   └── splash/               # 启动页模块
+├── features/                     # Feature modules
+│   ├── auth/                     # Authentication module
+│   │   ├── bindings/             # AuthBinding (dependency wiring)
+│   │   ├── controllers/          # AuthController (login / register logic)
+│   │   ├── models/               # UserModel (freezed)
+│   │   ├── services/             # AuthService (API calls)
+│   │   └── views/                # LoginPage, RegisterPage
+│   ├── home/                     # Home module (Home / Profile / Settings tabs)
+│   │   ├── bindings/
+│   │   ├── controllers/
+│   │   └── views/
+│   └── splash/                   # Splash screen (animation + auth redirect)
+│       └── views/
 │
-├── shared/                   # 共享层
-│   ├── constants/            # 常量定义
-│   ├── translations/         # 国际化
-│   └── types/                # 类型定义
+├── l10n/                         # Internationalization
+│   ├── app_en.arb                # English strings
+│   ├── app_zh.arb                # Chinese strings
+│   └── generated/                # Auto-generated by gen-l10n (do not edit manually)
 │
-└── main.dart                 # 程序入口
+├── shared/                       # Global shared constants
+│   └── constants/                # storage_keys.dart, api_constants.dart
+│
+└── main.dart                     # Entry point (init order: Storage → AppController → HttpClient → AuthService)
 ```
 
-## 🛠️ 技术栈
+Every feature module under `features/<name>/` follows the same fixed subdirectory layout: `controllers/` `services/` `models/` `views/` `bindings/` `widgets/`.
 
-| 分类 | 技术 | 版本 |
-|------|------|------|
-| 状态管理 | GetX | 4.6.6 |
-| 网络请求 | Dio | 5.4.0 |
-| 本地存储 | Hive | 2.2.3 |
-| 键值存储 | SharedPreferences | 2.2.2 |
-| 屏幕适配 | ScreenUtil | 5.9.0 |
-| 图片缓存 | CachedNetworkImage | 3.3.1 |
-| 日志 | Logger | 2.0.2 |
+---
 
-## 📝 常用命令
+## 🔧 Core Modules
+
+### Routing
+
+Routing is configured in `lib/app/router/app_router.dart` using `go_router`:
+
+- All route path constants are defined in the `AppRoutes` class
+- `_guard()` handles authentication redirects (unauthenticated users are sent to the login page)
+- Controllers navigate via `AppRouter.go()` / `AppRouter.push()` / `AppRouter.pop()` — no `BuildContext` required
+
+```dart
+// Navigation examples
+AppRouter.go(AppRoutes.home);
+AppRouter.push(AppRoutes.register);
+AppRouter.pop();
+```
+
+### State Management
+
+The project uses **GetX exclusively** for state management and dependency injection. `setState`, `Provider`, and `Bloc` are not used:
+
+```dart
+// Declare reactive variables in controllers
+final isLoading = false.obs;
+final user = Rxn<UserModel>();
+
+// React to changes in views
+Obx(() => Text(controller.isLoading.value ? 'Loading...' : 'Done'));
+```
+
+Global app state (theme / locale) is managed through `AppController`:
+
+```dart
+final appCtrl = Get.find<AppController>();
+appCtrl.changeTheme(ThemeMode.dark);
+appCtrl.changeLocale(const Locale('en', 'US'));
+// Convenience getters
+bool isChinese = appCtrl.isChinese;
+String langName = appCtrl.currentLanguageName;
+```
+
+### Internationalization
+
+ARB files live in `lib/l10n/`. Key naming convention is `groupNameKey` (camelCase):
+
+```
+commonAppName         → globally shared strings
+pagesLoginTitle       → page-level strings
+validationRequired    → validation messages
+widgetsErrorTitle     → widget-level strings
+```
+
+After modifying ARB files, run `make l10n` to regenerate. Access strings in widgets:
+
+```dart
+// In views (context is always available)
+Text(context.l10n.commonAppName)
+
+// In private helper methods (always declare the type explicitly)
+Widget _buildForm(AppLocalizations l10n) { ... }
+```
+
+> **Note:** Always type `AppLocalizations l10n` explicitly in method signatures. An untyped `l10n` infers as `dynamic` and causes `argument_type_not_assignable` errors at the call site.
+
+### Network Layer
+
+`HttpClient` (`lib/core/network/http_client.dart`) wraps Dio with three interceptors:
+
+1. **Auth Interceptor** — automatically injects the Bearer token from storage
+2. **Error Normalization Interceptor** — maps HTTP errors to unified `AppException`
+3. **Logger Interceptor** — logs requests and responses in development mode
+
+All API responses are mapped to the `ApiResponse<T>` freezed generic. Unwrap in the service layer:
+
+```dart
+// Service layer example
+final response = await _http.post<Map<String, dynamic>>(
+  ApiConstants.login,
+  data: {'username': username, 'password': password},
+);
+final user = UserModel.fromJson(response.data!);
+```
+
+### Local Storage
+
+`StorageService` provides a unified storage API:
+
+```dart
+final storage = Get.find<StorageService>();
+
+// SharedPreferences for primitives
+await storage.setString(StorageKeys.accessToken, token);
+String? token = storage.getString(StorageKeys.accessToken);
+
+// Hive for complex objects
+await storage.saveUserData(StorageKeys.currentUser, user.toJson());
+Map<String, dynamic>? data = storage.getUserData(StorageKeys.currentUser);
+```
+
+> **Web note:** Hive on web deserializes stored maps as `LinkedMap<dynamic, dynamic>`. `StorageService.getFromHive` automatically normalizes these to `Map<String, dynamic>`.
+
+### Shared Widget Library
+
+Components in `lib/core/widgets/` must be preferred over raw Flutter primitives. **Never place** `ElevatedButton`, `TextFormField`, or `CircularProgressIndicator` directly in pages:
+
+| Component | Usage |
+|-----------|-------|
+| `AppButton` | 4 types: primary / secondary / text / danger; 3 sizes; `isLoading`, `expanded`, `borderRadius` |
+| `AppTextField` | Dark-mode-aware `TextFormField` with validation and icon support |
+| `AppLoading` | Centered spinner; `.page()` full-screen; `.inline()` compact |
+| `AppShimmerLoading` | Animated shimmer skeleton wrapper |
+| `AppListSkeleton` | List placeholder with shimmer rows |
+| `AppEmpty` | Empty states: `.noData()` `.noSearchResult()` `.noNetwork()` `.noMessage()` etc. |
+| `AppError` | Error states: `.network()` `.server()` `.notFound()` `.timeout()` etc. |
+| `AppRefreshList<T>` | Pull-to-refresh + pagination; handles loading / empty / error internally |
+| `AppImage` / `AppAvatar` | Cached network images with shimmer placeholder and error fallback |
+
+> **`AppButton` tip:** The default `borderRadius` is 8. Use `borderRadius: 12` in form contexts to match `AppTextField`'s 12px radius.
+
+### Design System
+
+Use design tokens instead of hardcoded values:
+
+```dart
+// Colors
+AppColors.primary            // #2196F3
+AppColors.error              // #F44336
+AppColors.textPrimary        // Light mode primary text
+AppColors.textPrimaryDark    // Dark mode primary text
+AppColors.textSecondary      // Light mode secondary text
+AppColors.textSecondaryDark  // Dark mode secondary text
+AppColors.surface            // Light mode card background
+AppColors.surfaceDark        // Dark mode card background
+
+// Text styles
+AppTextStyles.headlineLarge
+AppTextStyles.titleMedium
+AppTextStyles.bodyMedium
+AppTextStyles.labelSmall
+```
+
+For dark-mode-aware code, check `Theme.of(context).brightness == Brightness.dark` and switch between light/dark token variants.
+
+### Environment Configuration
+
+Values are injected via `--dart-define-from-file` and read in `EnvConfig`:
 
 ```bash
-# 开发
-make run              # 运行 (Chrome)
-make run-web          # 运行 (Web 端口 8080)
-make stop             # 停止运行
-
-# 构建
-make build-web        # 构建 Web
-make build-ios        # 构建 iOS
-make build-android    # 构建 Android
-
-# 代码质量
-make analyze          # 代码分析
-make format           # 格式化代码
-make test             # 运行测试
-
-# 清理
-make clean            # 清理构建
-make clean-all        # 清理所有
+cp config/dev.example.json config/dev.json
+# Fill in your API base URL and other config values
 ```
 
-## 🎨 主题配置
+`config/dev.json`, `config/staging.json`, and `config/prod.json` are gitignored. Only `config/dev.example.json` is committed. Three environments are supported out of the box: `development`, `staging`, and `production`.
 
-项目支持亮色/暗色主题切换，设置会自动持久化。
+---
 
-```dart
-// 切换主题
-SettingsHelper.changeTheme(ThemeMode.dark);
+## 📋 Common Commands
 
-// 切换语言
-SettingsHelper.toZhCN();
-SettingsHelper.toEnUS();
+```bash
+# Development
+make install          # flutter pub get
+make run              # Run on Chrome with dev config
+make run-android      # Run on Android device
+make run-ios          # Run on iOS simulator
+
+# Code generation (run after modifying models or ARB files)
+make l10n             # flutter gen-l10n → regenerate l10n code
+make generate         # build_runner → regenerate freezed / json_serializable
+make watch            # build_runner in watch mode
+
+# Code quality
+make fmt              # dart format lib/
+make analyze          # flutter analyze
+
+# Testing
+make test             # Run all tests
+make test-coverage    # Generate coverage report
+
+# Building
+make build-web        # Web production build
+make build-android    # Android APK
+make build-ios        # iOS release build
 ```
 
-## 🌍 国际化
+---
 
-采用结构化 Key 命名规范：
+## 🛠️ Tech Stack
 
-```dart
-// 格式：分类.页面.元素
-'pages.login.title'.tr           // "登录"
-'common.confirm'.tr              // "确认"
-'validation.email.invalid'.tr    // "邮箱格式不正确"
+| Category | Package | Version |
+|----------|---------|---------|
+| State Management & DI | get | ^4.6.6 |
+| Routing | go_router | ^14.8.1 |
+| HTTP Client | dio | ^5.4.0 |
+| Local Storage | hive / hive_flutter | ^2.2.3 / ^1.1.0 |
+| Key-Value Storage | shared_preferences | ^2.2.2 |
+| Data Models | freezed_annotation / json_annotation | ^2.4.4 / ^4.9.0 |
+| Screen Adaptation | flutter_screenutil | ^5.9.0 |
+| Image Caching | cached_network_image | ^3.3.1 |
+| Internationalization | flutter_localizations (SDK) / intl | ^0.20.0 |
+| Logging | logger | ^2.0.2 |
+| Code Generation | build_runner / freezed / json_serializable | dev deps |
+
+---
+
+## 🤝 Contributing
+
+Issues and pull requests are welcome. Please follow the Conventional Commits specification:
+
+```
+feat(auth): add third-party OAuth login
+fix(storage): normalize Hive LinkedMap on web platform
+refactor(home): migrate feature cards to Dart 3 records
 ```
 
-## 📚 文档
-
-- [贡献指南](CONTRIBUTING.md) - 开发规范与代码风格
-- [架构设计](docs/Flutter架构设计文档.md) - 详细架构说明
-
-## 🤝 贡献
-
-欢迎贡献！请先阅读 [贡献指南](CONTRIBUTING.md)。
-
-## 📄 许可证
+## 📄 License
 
 [MIT License](LICENSE)
 
 ---
 
-<p align="center">
-  Made with ❤️ by Flutter Boost Team
-</p>
+<p align="center">Made with ❤️ by Flutter Boost Team</p>

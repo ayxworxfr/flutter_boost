@@ -8,7 +8,7 @@ import 'interceptors/error_interceptor.dart';
 import 'interceptors/log_interceptor.dart';
 
 /// HTTP 客户端封装
-/// 
+///
 /// 基于 Dio 封装，提供统一的网络请求接口
 class HttpClient extends GetxService {
   late final Dio _dio;
@@ -38,8 +38,9 @@ class HttpClient extends GetxService {
     );
 
     // 添加拦截器（顺序很重要）
+    // AuthInterceptor 需要持有 _dio 引用以重放失败请求；用级联注入避免循环 import
     _dio.interceptors.addAll([
-      AuthInterceptor(),
+      AuthInterceptor()..dio = _dio,
       ErrorInterceptor(),
       AppLogInterceptor(),
     ]);
@@ -138,9 +139,7 @@ class HttpClient extends GetxService {
       return await _dio.post<T>(
         path,
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        options: Options(contentType: 'multipart/form-data'),
         onSendProgress: onSendProgress,
         cancelToken: cancelToken,
       );

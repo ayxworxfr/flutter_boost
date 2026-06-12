@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
+import '../l10n/l10n_extension.dart';
 import 'app_loading.dart';
 import 'app_empty.dart';
 import 'app_error.dart';
@@ -24,7 +24,7 @@ enum ListState {
 }
 
 /// 刷新列表组件
-/// 
+///
 /// 支持下拉刷新、上拉加载更多、状态管理
 class AppRefreshList<T> extends StatelessWidget {
   /// 数据列表
@@ -108,14 +108,12 @@ class AppRefreshList<T> extends StatelessWidget {
 
     // 加载错误
     if (state == ListState.error && items.isEmpty) {
-      return AppError.loadFailed(
-        message: errorMessage,
-        onRetry: onRetry,
-      );
+      return AppError.loadFailed(message: errorMessage, onRetry: onRetry);
     }
 
     // 空数据
-    if (state == ListState.empty || (state == ListState.success && items.isEmpty)) {
+    if (state == ListState.empty ||
+        (state == ListState.success && items.isEmpty)) {
       return emptyWidget ?? AppEmpty.noData(onAction: onRetry);
     }
 
@@ -184,7 +182,7 @@ class AppRefreshList<T> extends StatelessWidget {
 
     // 加载更多指示器
     if (_isLoadMoreIndex(index)) {
-      return _buildLoadMoreIndicator();
+      return _buildLoadMoreIndicator(context);
     }
 
     // 数据项
@@ -207,7 +205,7 @@ class AppRefreshList<T> extends StatelessWidget {
     return index == loadMoreIndex;
   }
 
-  Widget _buildLoadMoreIndicator() {
+  Widget _buildLoadMoreIndicator(BuildContext context) {
     if (isLoadingMore) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -226,11 +224,8 @@ class AppRefreshList<T> extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Center(
           child: Text(
-            'widgets.list.load_more'.tr,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
+            context.l10n.widgetsListLoadMore,
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
           ),
         ),
       );
@@ -240,11 +235,8 @@ class AppRefreshList<T> extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Center(
         child: Text(
-          'widgets.list.no_more'.tr,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
+          context.l10n.widgetsListNoMore,
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
         ),
       ),
     );

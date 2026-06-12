@@ -7,4 +7,3 @@ class SplashBinding extends Bindings {
     // 启动页不需要特别的依赖
   }
 }
-

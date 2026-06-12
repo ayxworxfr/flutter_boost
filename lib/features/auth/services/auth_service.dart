@@ -5,27 +5,29 @@ import '../../../core/network/http_client.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../shared/constants/api_constants.dart';
 import '../../../shared/constants/storage_keys.dart';
+import '../../../shared/models/api_response.dart';
 import '../models/user_model.dart';
 
 /// 认证服务
 ///
 /// 提供用户认证相关功能：
 /// - 登录/注册/登出
-/// - Token 管理
+/// - Token 管理（access token 存平台安全区，session 状态同步到 SharedPreferences 供路由守卫同步读取）
 /// - 用户信息管理
 class AuthService extends GetxService {
   final HttpClient _http = Get.find<HttpClient>();
   final StorageService _storage = Get.find<StorageService>();
 
-  /// 当前用户
-  UserModel? _currentUser;
-  UserModel? get currentUser => _currentUser;
+  /// 当前用户（响应式，供 Obx 订阅）
+  final Rxn<UserModel> currentUser = Rxn<UserModel>();
 
-  /// 是否已登录
-  bool get isLoggedIn {
-    final token = _storage.getString(StorageKeys.accessToken);
-    return token != null && token.isNotEmpty;
-  }
+  /// access token 内存缓存，供 AuthInterceptor.onRequest 同步读取
+  String? _cachedAccessToken;
+  String? get cachedAccessToken => _cachedAccessToken;
+
+  /// 是否已登录（依赖内存缓存，启动后由 loadUserFromLocal 填充）
+  bool get isLoggedIn =>
+      _cachedAccessToken != null && _cachedAccessToken!.isNotEmpty;
 
   /// 登录
   ///
@@ -43,25 +45,30 @@ class AuthService extends GetxService {
     // 生产模式：调用真实 API
     final response = await _http.post<Map<String, dynamic>>(
       ApiConstants.login,
-      data: {
-        'username': username,
-        'password': password,
-      },
+      data: {'username': username, 'password': password},
     );
 
-    final data = response.data as Map<String, dynamic>;
+    final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+      response.data!,
+      (e) => e as Map<String, dynamic>,
+    );
+    final data = apiResponse.data!;
 
     // 保存 Token
     await _saveTokens(data);
 
     // 解析用户信息
-    _currentUser = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+    currentUser.value = UserModel.fromJson(
+      data['user'] as Map<String, dynamic>,
+    );
 
     // 保存用户信息到本地
     await _storage.saveUserData(
-        StorageKeys.currentUser, _currentUser!.toJson());
+      StorageKeys.currentUser,
+      currentUser.value!.toJson(),
+    );
 
-    return _currentUser!;
+    return currentUser.value!;
   }
 
   /// 模拟登录（开发模式）
@@ -76,29 +83,34 @@ class AuthService extends GetxService {
     await _saveTokens(mockResponse);
 
     // 解析用户信息
-    _currentUser =
-        UserModel.fromJson(mockResponse['user'] as Map<String, dynamic>);
+    currentUser.value = UserModel.fromJson(
+      mockResponse['user'] as Map<String, dynamic>,
+    );
 
     // 保存用户信息到本地
     await _storage.saveUserData(
-        StorageKeys.currentUser, _currentUser!.toJson());
-
-    return _currentUser!;
-  }
-
-  /// 保存 Token
-  Future<void> _saveTokens(Map<String, dynamic> data) async {
-    await _storage.setString(
-      StorageKeys.accessToken,
-      data['accessToken'] as String,
+      StorageKeys.currentUser,
+      currentUser.value!.toJson(),
     );
 
+    return currentUser.value!;
+  }
+
+  /// 保存 Token 到平台安全区，并更新内存缓存和会话标志
+  Future<void> _saveTokens(Map<String, dynamic> data) async {
+    final accessToken = data['accessToken'] as String;
+    await _storage.setSecureString(StorageKeys.accessToken, accessToken);
+    _cachedAccessToken = accessToken;
+
     if (data['refreshToken'] != null) {
-      await _storage.setString(
+      await _storage.setSecureString(
         StorageKeys.refreshToken,
         data['refreshToken'] as String,
       );
     }
+
+    // 同步写入 SharedPreferences，供路由守卫同步读取
+    await _storage.setBool(StorageKeys.sessionActive, true);
   }
 
   /// 注册
@@ -128,16 +140,24 @@ class AuthService extends GetxService {
       },
     );
 
-    final data = response.data as Map<String, dynamic>;
+    final apiResponse = ApiResponse<Map<String, dynamic>>.fromJson(
+      response.data!,
+      (e) => e as Map<String, dynamic>,
+    );
+    final data = apiResponse.data!;
 
     // 注册成功后自动登录
     await _saveTokens(data);
 
-    _currentUser = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+    currentUser.value = UserModel.fromJson(
+      data['user'] as Map<String, dynamic>,
+    );
     await _storage.saveUserData(
-        StorageKeys.currentUser, _currentUser!.toJson());
+      StorageKeys.currentUser,
+      currentUser.value!.toJson(),
+    );
 
-    return _currentUser!;
+    return currentUser.value!;
   }
 
   /// 登出
@@ -157,23 +177,27 @@ class AuthService extends GetxService {
 
   /// 清除本地认证信息
   Future<void> _clearLocalAuth() async {
-    await _storage.remove(StorageKeys.accessToken);
-    await _storage.remove(StorageKeys.refreshToken);
+    await _storage.removeSecure(StorageKeys.accessToken);
+    await _storage.removeSecure(StorageKeys.refreshToken);
     await _storage.deleteUserData(StorageKeys.currentUser);
-    _currentUser = null;
+    await _storage.setBool(StorageKeys.sessionActive, false);
+    _cachedAccessToken = null;
+    currentUser.value = null;
   }
 
   /// 刷新 Token
   Future<bool> refreshToken() async {
-    final refreshToken = _storage.getString(StorageKeys.refreshToken);
-    if (refreshToken == null || refreshToken.isEmpty) {
+    final storedRefreshToken = await _storage.getSecureString(
+      StorageKeys.refreshToken,
+    );
+    if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
       return false;
     }
 
     try {
       final response = await _http.post<Map<String, dynamic>>(
         ApiConstants.refreshToken,
-        data: {'refreshToken': refreshToken},
+        data: {'refreshToken': storedRefreshToken},
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -187,37 +211,50 @@ class AuthService extends GetxService {
 
   /// 获取用户信息
   Future<UserModel> getUserInfo() async {
-    final response = await _http.get<Map<String, dynamic>>(ApiConstants.userInfo);
+    final response = await _http.get<Map<String, dynamic>>(
+      ApiConstants.userInfo,
+    );
 
-    _currentUser = UserModel.fromJson(response.data!);
+    currentUser.value = UserModel.fromJson(response.data!);
     await _storage.saveUserData(
-        StorageKeys.currentUser, _currentUser!.toJson());
+      StorageKeys.currentUser,
+      currentUser.value!.toJson(),
+    );
 
-    return _currentUser!;
+    return currentUser.value!;
   }
 
-  /// 从本地加载用户信息
+  /// 从本地加载用户信息（应用启动时调用，恢复登录状态）
   Future<void> loadUserFromLocal() async {
+    // 从安全区恢复 access token 到内存缓存
+    _cachedAccessToken = await _storage.getSecureString(
+      StorageKeys.accessToken,
+    );
+
     final userData = _storage.getUserData<Map<String, dynamic>>(
       StorageKeys.currentUser,
     );
 
     if (userData != null) {
-      _currentUser = UserModel.fromJson(userData);
+      currentUser.value = UserModel.fromJson(userData);
     }
   }
 
   /// 更新用户信息
   Future<UserModel> updateUserInfo(Map<String, dynamic> data) async {
-    final response = await _http.put(
+    final response = await _http.put<Map<String, dynamic>>(
       ApiConstants.updateProfile,
       data: data,
     );
 
-    _currentUser = UserModel.fromJson(response.data as Map<String, dynamic>);
+    currentUser.value = UserModel.fromJson(
+      response.data as Map<String, dynamic>,
+    );
     await _storage.saveUserData(
-        StorageKeys.currentUser, _currentUser!.toJson());
+      StorageKeys.currentUser,
+      currentUser.value!.toJson(),
+    );
 
-    return _currentUser!;
+    return currentUser.value!;
   }
 }

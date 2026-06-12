@@ -15,12 +15,13 @@ class HomeController extends GetxController {
   bool get isLoggedIn => _authService.isLoggedIn;
 
   /// 当前用户名
-  String get displayName => _authService.currentUser?.displayName ?? 'Guest';
+  String get displayName =>
+      _authService.currentUser.value?.displayName ?? 'Guest';
 
   @override
   void onInit() {
     super.onInit();
-    LoggerUtil.info('首页初始化');
+    LoggerUtil.i('首页初始化');
   }
 
   /// 切换底部导航
@@ -28,4 +29,3 @@ class HomeController extends GetxController {
     currentIndex.value = index;
   }
 }
-

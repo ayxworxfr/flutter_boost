@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../app/routes/app_routes.dart';
+import '../../../app/router/app_router.dart';
+import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/constants/storage_keys.dart';
 
 /// 启动页
+///
+/// 展示动画后根据登录状态导航到首页或登录页。
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -14,7 +18,8 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -50,16 +55,11 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
     if (!mounted) return;
 
-    // 检查是否已登录
     final storage = Get.find<StorageService>();
     final token = storage.getString(StorageKeys.accessToken);
     final isLoggedIn = token != null && token.isNotEmpty;
 
-    if (isLoggedIn) {
-      Get.offAllNamed<void>(AppRoutes.home);
-    } else {
-      Get.offAllNamed<void>(AppRoutes.login);
-    }
+    context.go(isLoggedIn ? AppRoutes.home : AppRoutes.login);
   }
 
   @override
@@ -76,10 +76,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-            ],
+            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
           ),
         ),
         child: SafeArea(
@@ -94,7 +91,6 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo
                         Container(
                           width: 120,
                           height: 120,
@@ -116,10 +112,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                           ),
                         ),
                         const SizedBox(height: 32),
-                        // App 名称
-                        const Text(
-                          'Flutter Boost',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.commonAppName,
+                          style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -127,16 +122,14 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                           ),
                         ),
                         const SizedBox(height: 8),
-                        // 副标题
                         Text(
-                          '企业级 Flutter 脚手架',
+                          context.l10n.commonAppTagline,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(height: 60),
-                        // 加载指示器
                         SizedBox(
                           width: 24,
                           height: 24,
@@ -159,4 +152,3 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     );
   }
 }
-

@@ -2,8 +2,11 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../shared/constants/storage_keys.dart';
 
+/// 枚举：代表各个 Hive Box 的身份，避免散落的字符串字面量
+enum HiveBox { user, cache, settings }
+
 /// Hive Box 管理类
-/// 
+///
 /// 统一管理所有 Hive Box 的创建和访问
 class HiveBoxes {
   HiveBoxes._();

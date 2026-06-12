@@ -58,10 +58,7 @@ class AppLoading extends StatelessWidget {
         color: Colors.black.withValues(alpha: 0.3),
         child: Center(
           child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: loading,
-            ),
+            child: Padding(padding: const EdgeInsets.all(24), child: loading),
           ),
         ),
       );
@@ -72,9 +69,7 @@ class AppLoading extends StatelessWidget {
 
   /// 页面级加载（全屏）
   static Widget page({String? message}) {
-    return Scaffold(
-      body: AppLoading(message: message),
-    );
+    return Scaffold(body: AppLoading(message: message));
   }
 
   /// 内联加载（小尺寸）
@@ -83,8 +78,8 @@ class AppLoading extends StatelessWidget {
   }
 }
 
-/// 骨架屏加载组件
-class AppShimmerLoading extends StatelessWidget {
+/// 骨架屏加载组件（带流光扫描动画）
+class AppShimmerLoading extends StatefulWidget {
   /// 子组件
   final Widget child;
 
@@ -102,25 +97,56 @@ class AppShimmerLoading extends StatelessWidget {
   });
 
   @override
+  State<AppShimmerLoading> createState() => _AppShimmerLoadingState();
+}
+
+class _AppShimmerLoadingState extends State<AppShimmerLoading>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base =
+        widget.baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!);
+    final highlight =
+        widget.highlightColor ??
+        (isDark ? Colors.grey[600]! : Colors.grey[100]!);
 
-    return ShaderMask(
-      blendMode: BlendMode.srcATop,
-      shaderCallback: (bounds) {
-        return LinearGradient(
-          colors: [
-            baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!),
-            highlightColor ?? (isDark ? Colors.grey[700]! : Colors.grey[100]!),
-            baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!),
-          ],
-          stops: const [0.0, 0.5, 1.0],
-          begin: const Alignment(-1.0, -0.3),
-          end: const Alignment(1.0, 0.3),
-          tileMode: TileMode.clamp,
-        ).createShader(bounds);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) {
+            final t = _controller.value;
+            return LinearGradient(
+              colors: [base, highlight, base],
+              stops: const [0.0, 0.5, 1.0],
+              begin: Alignment(-2.0 + t * 4, -0.3),
+              end: Alignment(-1.0 + t * 4, 0.3),
+              tileMode: TileMode.clamp,
+            ).createShader(bounds);
+          },
+          child: child!,
+        );
       },
-      child: child,
+      child: widget.child,
     );
   }
 }
@@ -159,11 +185,7 @@ class AppListSkeleton extends StatelessWidget {
           child: Row(
             children: [
               if (showAvatar) ...[
-                _buildShimmerBox(
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                ),
+                _buildShimmerBox(width: 48, height: 48, borderRadius: 24),
                 const SizedBox(width: 12),
               ],
               Expanded(
@@ -178,11 +200,7 @@ class AppListSkeleton extends StatelessWidget {
                     ),
                     if (showSubtitle) ...[
                       const SizedBox(height: 8),
-                      _buildShimmerBox(
-                        width: 150,
-                        height: 12,
-                        borderRadius: 4,
-                      ),
+                      _buildShimmerBox(width: 150, height: 12, borderRadius: 4),
                     ],
                   ],
                 ),
@@ -199,14 +217,18 @@ class AppListSkeleton extends StatelessWidget {
     required double height,
     required double borderRadius,
   }) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.grey[300],
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        );
+      },
     );
   }
 }
-

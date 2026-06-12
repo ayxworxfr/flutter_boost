@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../app/routes/app_routes.dart';
+import '../../../app/router/app_router.dart';
 import '../../../core/utils/logger_util.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
@@ -27,7 +27,7 @@ class AuthController extends GetxController {
   final errorMessage = ''.obs;
 
   // 当前用户
-  Rx<UserModel?> get currentUser => Rx<UserModel?>(_authService.currentUser);
+  Rxn<UserModel> get currentUser => _authService.currentUser;
 
   /// 是否已登录
   bool get isLoggedIn => _authService.isLoggedIn;
@@ -35,7 +35,11 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // 设置默认账户和密码（开发环境）
+    _prefillDevDefaults();
+  }
+
+  /// 开发环境预填默认账户，方便调试
+  void _prefillDevDefaults() {
     usernameController.text = 'admin';
     passwordController.text = '123456';
   }
@@ -60,9 +64,7 @@ class AuthController extends GetxController {
   }
 
   /// 清除错误信息
-  void clearError() {
-    errorMessage.value = '';
-  }
+  void clearError() => errorMessage.value = '';
 
   /// 登录
   Future<void> login() async {
@@ -77,28 +79,23 @@ class AuthController extends GetxController {
         password: passwordController.text,
       );
 
-      LoggerUtil.i('pages.login.success'.tr);
-      
-      // 清空表单
+      LoggerUtil.i('Login succeeded');
       _clearForm();
-      
-      // 跳转首页
-      Get.offAllNamed<void>(AppRoutes.home);
+      AppRouter.go(AppRoutes.home);
     } catch (e) {
       errorMessage.value = e.toString();
-      LoggerUtil.e('pages.login.failed'.tr, e);
+      LoggerUtil.e('Login failed', e);
     } finally {
       isLoading.value = false;
     }
   }
 
   /// 注册
-  Future<void> register() async {
+  Future<void> register(String passwordMismatchMessage) async {
     if (!registerFormKey.currentState!.validate()) return;
 
-    // 检查密码一致性
     if (passwordController.text != confirmPasswordController.text) {
-      errorMessage.value = 'validation.password.mismatch'.tr;
+      errorMessage.value = passwordMismatchMessage;
       return;
     }
 
@@ -114,16 +111,12 @@ class AuthController extends GetxController {
             : emailController.text.trim(),
       );
 
-      LoggerUtil.info('pages.register.success'.tr);
-      
-      // 清空表单
+      LoggerUtil.i('Registration succeeded');
       _clearForm();
-      
-      // 跳转首页
-      Get.offAllNamed<void>(AppRoutes.home);
+      AppRouter.go(AppRoutes.home);
     } catch (e) {
       errorMessage.value = e.toString();
-      LoggerUtil.error('pages.register.failed'.tr, e);
+      LoggerUtil.e('Registration failed', e);
     } finally {
       isLoading.value = false;
     }
@@ -134,13 +127,11 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
       await _authService.logout();
-      
-      LoggerUtil.info('pages.settings.logout_success'.tr);
-      
-      // 跳转登录页
-      Get.offAllNamed<void>(AppRoutes.login);
+      LoggerUtil.i('Logout succeeded');
+      _prefillDevDefaults();
+      AppRouter.go(AppRoutes.login);
     } catch (e) {
-      LoggerUtil.error('pages.settings.logout'.tr, e);
+      LoggerUtil.e('Logout failed', e);
     } finally {
       isLoading.value = false;
     }
@@ -149,16 +140,15 @@ class AuthController extends GetxController {
   /// 跳转到注册页
   void goToRegister() {
     _clearForm();
-    Get.toNamed<void>(AppRoutes.register);
+    AppRouter.push(AppRoutes.register);
   }
 
-  /// 跳转到登录页
+  /// 返回登录页
   void goToLogin() {
     _clearForm();
-    Get.back<void>();
+    AppRouter.pop();
   }
 
-  /// 清空表单
   void _clearForm() {
     usernameController.clear();
     passwordController.clear();

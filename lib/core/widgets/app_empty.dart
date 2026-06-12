@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
+import '../l10n/l10n_extension.dart';
 import '../theme/app_colors.dart';
+import '../../l10n/generated/app_localizations.dart';
+
+enum _EmptyType {
+  generic,
+  noData,
+  noSearchResult,
+  noNetwork,
+  noMessage,
+  noNotification,
+  noFavorite,
+}
 
 /// 空状态组件
+///
+/// 使用具名工厂构造函数时文案从当前语言包中读取：
+/// ```dart
+/// AppEmpty.noData()
+/// AppEmpty.noSearchResult(keyword: query, onClear: controller.clearSearch)
+/// ```
 class AppEmpty extends StatelessWidget {
-  /// 图标
+  final _EmptyType _type;
   final IconData? icon;
-
-  /// 自定义图片 Widget
   final Widget? image;
-
-  /// 标题
   final String? title;
-
-  /// 描述
   final String? description;
-
-  /// 操作按钮文字
   final String? actionText;
-
-  /// 操作按钮回调
   final VoidCallback? onAction;
-
-  /// 图标大小
   final double iconSize;
-
-  /// 图标颜色
   final Color? iconColor;
+
+  /// 用于 noSearchResult 的关键字
+  final String? _keyword;
 
   const AppEmpty({
     super.key,
@@ -39,10 +45,85 @@ class AppEmpty extends StatelessWidget {
     this.onAction,
     this.iconSize = 80,
     this.iconColor,
-  });
+  }) : _type = _EmptyType.generic,
+       _keyword = null;
+
+  const AppEmpty._typed({
+    super.key,
+    required _EmptyType type,
+    this.icon,
+    this.image,
+    this.title,
+    this.description,
+    this.actionText,
+    this.onAction,
+    this.iconSize = 80,
+    this.iconColor,
+    String? keyword,
+  }) : _type = type,
+       _keyword = keyword;
+
+  factory AppEmpty.noData({
+    Key? key,
+    String? description,
+    String? actionText,
+    VoidCallback? onAction,
+  }) => AppEmpty._typed(
+    key: key,
+    type: _EmptyType.noData,
+    icon: Icons.inbox_outlined,
+    description: description,
+    actionText: actionText,
+    onAction: onAction,
+  );
+
+  factory AppEmpty.noSearchResult({
+    Key? key,
+    String? keyword,
+    VoidCallback? onClear,
+  }) => AppEmpty._typed(
+    key: key,
+    type: _EmptyType.noSearchResult,
+    icon: Icons.search_off_outlined,
+    keyword: keyword,
+    onAction: onClear,
+  );
+
+  factory AppEmpty.noNetwork({Key? key, VoidCallback? onRetry}) =>
+      AppEmpty._typed(
+        key: key,
+        type: _EmptyType.noNetwork,
+        icon: Icons.wifi_off_outlined,
+        onAction: onRetry,
+      );
+
+  factory AppEmpty.noMessage({Key? key}) => AppEmpty._typed(
+    key: key,
+    type: _EmptyType.noMessage,
+    icon: Icons.message_outlined,
+  );
+
+  factory AppEmpty.noNotification({Key? key}) => AppEmpty._typed(
+    key: key,
+    type: _EmptyType.noNotification,
+    icon: Icons.notifications_off_outlined,
+  );
+
+  factory AppEmpty.noFavorite({Key? key, VoidCallback? onExplore}) =>
+      AppEmpty._typed(
+        key: key,
+        type: _EmptyType.noFavorite,
+        icon: Icons.favorite_border,
+        onAction: onExplore,
+      );
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final resolvedTitle = title ?? _defaultTitle(l10n);
+    final resolvedDescription = description ?? _defaultDescription(l10n);
+    final resolvedActionText = actionText ?? _defaultActionText(l10n);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -50,7 +131,6 @@ class AppEmpty extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 图标或图片
             if (image != null)
               image!
             else
@@ -59,13 +139,10 @@ class AppEmpty extends StatelessWidget {
                 size: iconSize,
                 color: iconColor ?? AppColors.textDisabled,
               ),
-
             const SizedBox(height: 16),
-
-            // 标题
-            if (title != null)
+            if (resolvedTitle != null)
               Text(
-                title!,
+                resolvedTitle,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -73,12 +150,10 @@ class AppEmpty extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-
-            // 描述
-            if (description != null) ...[
+            if (resolvedDescription != null) ...[
               const SizedBox(height: 8),
               Text(
-                description!,
+                resolvedDescription,
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -86,13 +161,11 @@ class AppEmpty extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-
-            // 操作按钮
-            if (actionText != null && onAction != null) ...[
+            if (resolvedActionText != null && onAction != null) ...[
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: onAction,
-                child: Text(actionText!),
+                child: Text(resolvedActionText),
               ),
             ],
           ],
@@ -101,83 +174,40 @@ class AppEmpty extends StatelessWidget {
     );
   }
 
-  /// 无数据
-  factory AppEmpty.noData({
-    String? description,
-    String? actionText,
-    VoidCallback? onAction,
-  }) {
-    return AppEmpty(
-      icon: Icons.inbox_outlined,
-      title: 'widgets.empty.no_data.title'.tr,
-      description: description,
-      actionText: actionText,
-      onAction: onAction,
-    );
+  String? _defaultTitle(AppLocalizations l10n) {
+    return switch (_type) {
+      _EmptyType.noData => l10n.widgetsEmptyNoDataTitle,
+      _EmptyType.noSearchResult => l10n.widgetsEmptyNoSearchTitle,
+      _EmptyType.noNetwork => l10n.widgetsEmptyNoNetworkTitle,
+      _EmptyType.noMessage => l10n.widgetsEmptyNoMessageTitle,
+      _EmptyType.noNotification => l10n.widgetsEmptyNoNotificationTitle,
+      _EmptyType.noFavorite => l10n.widgetsEmptyNoFavoriteTitle,
+      _EmptyType.generic => null,
+    };
   }
 
-  /// 无搜索结果
-  factory AppEmpty.noSearchResult({
-    String? keyword,
-    VoidCallback? onClear,
-  }) {
-    String? description;
-    if (keyword != null) {
-      description = 'widgets.empty.no_search.message'.tr.replaceAll('@keyword', keyword);
-    } else {
-      description = 'widgets.empty.no_search.message_default'.tr;
-    }
-    
-    return AppEmpty(
-      icon: Icons.search_off_outlined,
-      title: 'widgets.empty.no_search.title'.tr,
-      description: description,
-      actionText: onClear != null ? 'widgets.empty.no_search.action'.tr : null,
-      onAction: onClear,
-    );
+  String? _defaultDescription(AppLocalizations l10n) {
+    return switch (_type) {
+      _EmptyType.noSearchResult =>
+        _keyword != null
+            ? l10n.widgetsEmptyNoSearchMessage(_keyword!)
+            : l10n.widgetsEmptyNoSearchMessageDefault,
+      _EmptyType.noNetwork => l10n.widgetsEmptyNoNetworkMessage,
+      _EmptyType.noMessage => l10n.widgetsEmptyNoMessageMessage,
+      _EmptyType.noNotification => l10n.widgetsEmptyNoNotificationMessage,
+      _EmptyType.noFavorite => l10n.widgetsEmptyNoFavoriteMessage,
+      _ => null,
+    };
   }
 
-  /// 无网络
-  factory AppEmpty.noNetwork({
-    VoidCallback? onRetry,
-  }) {
-    return AppEmpty(
-      icon: Icons.wifi_off_outlined,
-      title: 'widgets.empty.no_network.title'.tr,
-      description: 'widgets.empty.no_network.message'.tr,
-      actionText: 'common.retry'.tr,
-      onAction: onRetry,
-    );
-  }
-
-  /// 无消息
-  factory AppEmpty.noMessage() {
-    return AppEmpty(
-      icon: Icons.message_outlined,
-      title: 'widgets.empty.no_message.title'.tr,
-      description: 'widgets.empty.no_message.message'.tr,
-    );
-  }
-
-  /// 无通知
-  factory AppEmpty.noNotification() {
-    return AppEmpty(
-      icon: Icons.notifications_off_outlined,
-      title: 'widgets.empty.no_notification.title'.tr,
-      description: 'widgets.empty.no_notification.message'.tr,
-    );
-  }
-
-  /// 无收藏
-  factory AppEmpty.noFavorite({
-    VoidCallback? onExplore,
-  }) {
-    return AppEmpty(
-      icon: Icons.favorite_border,
-      title: 'widgets.empty.no_favorite.title'.tr,
-      description: 'widgets.empty.no_favorite.message'.tr,
-      actionText: onExplore != null ? 'widgets.empty.no_favorite.action'.tr : null,
-      onAction: onExplore,
-    );
+  String? _defaultActionText(AppLocalizations l10n) {
+    return switch (_type) {
+      _EmptyType.noSearchResult =>
+        onAction != null ? l10n.widgetsEmptyNoSearchAction : null,
+      _EmptyType.noNetwork => l10n.commonRetry,
+      _EmptyType.noFavorite =>
+        onAction != null ? l10n.widgetsEmptyNoFavoriteAction : null,
+      _ => null,
+    };
   }
 }

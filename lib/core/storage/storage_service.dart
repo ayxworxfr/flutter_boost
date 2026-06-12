@@ -1,15 +1,23 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'hive_boxes.dart';
 
 /// 存储服务
-/// 
+///
 /// 提供统一的本地存储接口，支持：
-/// - SharedPreferences：简单的键值对存储
-/// - Hive：复杂数据和加密存储
+/// - SharedPreferences：简单的键值对存储（非敏感数据）
+/// - flutter_secure_storage：平台安全区（Android Keystore / iOS Keychain）
+///   注意：Web 端降级为 localStorage，与 SharedPreferences 安全级别等价。
+/// - Hive：复杂对象存储
 class StorageService extends GetxService {
   late SharedPreferences _prefs;
+
+  // encryptedSharedPreferences: true 在 Android 上使用 EncryptedSharedPreferences
+  final _secure = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   /// 初始化存储服务
   Future<StorageService> init() async {
@@ -62,90 +70,99 @@ class StorageService extends GetxService {
   /// 清空所有数据
   Future<bool> clear() => _prefs.clear();
 
+  // ==================== 安全存储操作 ====================
+
+  /// 将字符串写入平台安全区
+  Future<void> setSecureString(String key, String value) =>
+      _secure.write(key: key, value: value);
+
+  /// 从平台安全区读取字符串
+  Future<String?> getSecureString(String key) => _secure.read(key: key);
+
+  /// 删除平台安全区中的 key
+  Future<void> removeSecure(String key) => _secure.delete(key: key);
+
   // ==================== Hive 操作 ====================
 
   /// 从 Hive 获取数据
-  T? getFromHive<T>(String boxName, String key) {
+  T? getFromHive<T>(HiveBox boxName, String key) {
+    dynamic value;
     switch (boxName) {
-      case 'user_box':
-        return HiveBoxes.userBox.get(key) as T?;
-      case 'cache_box':
-        return HiveBoxes.cacheBox.get(key) as T?;
-      case 'settings_box':
-        return HiveBoxes.settingsBox.get(key) as T?;
-      default:
-        return null;
+      case HiveBox.user:
+        value = HiveBoxes.userBox.get(key);
+      case HiveBox.cache:
+        value = HiveBoxes.cacheBox.get(key);
+      case HiveBox.settings:
+        value = HiveBoxes.settingsBox.get(key);
     }
+    if (value == null) return null;
+    // Hive on web returns LinkedMap<dynamic, dynamic> for stored Maps;
+    // normalize to Map<String, dynamic> to avoid type cast failures.
+    if (value is Map && value is! Map<String, dynamic>) {
+      value = Map<String, dynamic>.from(value);
+    }
+    return value as T?;
   }
 
   /// 保存数据到 Hive
-  Future<void> saveToHive<T>(String boxName, String key, T value) async {
+  Future<void> saveToHive<T>(HiveBox boxName, String key, T value) async {
     switch (boxName) {
-      case 'user_box':
+      case HiveBox.user:
         await HiveBoxes.userBox.put(key, value);
-        break;
-      case 'cache_box':
+      case HiveBox.cache:
         await HiveBoxes.cacheBox.put(key, value);
-        break;
-      case 'settings_box':
+      case HiveBox.settings:
         await HiveBoxes.settingsBox.put(key, value);
-        break;
     }
   }
 
   /// 从 Hive 删除数据
-  Future<void> deleteFromHive(String boxName, String key) async {
+  Future<void> deleteFromHive(HiveBox boxName, String key) async {
     switch (boxName) {
-      case 'user_box':
+      case HiveBox.user:
         await HiveBoxes.userBox.delete(key);
-        break;
-      case 'cache_box':
+      case HiveBox.cache:
         await HiveBoxes.cacheBox.delete(key);
-        break;
-      case 'settings_box':
+      case HiveBox.settings:
         await HiveBoxes.settingsBox.delete(key);
-        break;
     }
   }
 
   /// 清空指定 Hive Box
-  Future<void> clearHiveBox(String boxName) async {
+  Future<void> clearHiveBox(HiveBox boxName) async {
     switch (boxName) {
-      case 'user_box':
+      case HiveBox.user:
         await HiveBoxes.userBox.clear();
-        break;
-      case 'cache_box':
+      case HiveBox.cache:
         await HiveBoxes.cacheBox.clear();
-        break;
-      case 'settings_box':
+      case HiveBox.settings:
         await HiveBoxes.settingsBox.clear();
-        break;
     }
   }
 
   // ==================== 便捷方法 ====================
 
   /// 获取用户数据
-  T? getUserData<T>(String key) => getFromHive<T>('user_box', key);
+  T? getUserData<T>(String key) => getFromHive<T>(HiveBox.user, key);
 
   /// 保存用户数据
   Future<void> saveUserData<T>(String key, T value) =>
-      saveToHive('user_box', key, value);
+      saveToHive(HiveBox.user, key, value);
 
   /// 删除用户数据
-  Future<void> deleteUserData(String key) => deleteFromHive('user_box', key);
+  Future<void> deleteUserData(String key) => deleteFromHive(HiveBox.user, key);
 
   /// 获取缓存数据
-  T? getCacheData<T>(String key) => getFromHive<T>('cache_box', key);
+  T? getCacheData<T>(String key) => getFromHive<T>(HiveBox.cache, key);
 
   /// 保存缓存数据
   Future<void> saveCacheData<T>(String key, T value) =>
-      saveToHive('cache_box', key, value);
+      saveToHive(HiveBox.cache, key, value);
 
   /// 删除缓存数据
-  Future<void> deleteCacheData(String key) => deleteFromHive('cache_box', key);
+  Future<void> deleteCacheData(String key) =>
+      deleteFromHive(HiveBox.cache, key);
 
   /// 清空所有缓存
-  Future<void> clearCache() => clearHiveBox('cache_box');
+  Future<void> clearCache() => clearHiveBox(HiveBox.cache);
 }
-
