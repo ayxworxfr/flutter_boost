@@ -1,9 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:get/get.dart' hide Response;
-
 import 'package:flutter_boost/core/network/http_client.dart';
 import 'package:flutter_boost/core/storage/storage_service.dart';
 import 'package:flutter_boost/core/widgets/app_button.dart';
@@ -12,6 +8,9 @@ import 'package:flutter_boost/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_boost/features/auth/services/auth_service.dart';
 import 'package:flutter_boost/features/auth/views/login_page.dart';
 import 'package:flutter_boost/l10n/generated/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart' hide Response;
 
 // ─── Fakes ────────────────────────────────────────────────────────────────────
 //
@@ -163,8 +162,9 @@ void main() {
 
     // Each AppTextField contains an EditableText. The password one (index 1)
     // must have obscureText == true.
-    final editables =
-        tester.widgetList<EditableText>(find.byType(EditableText)).toList();
+    final editables = tester
+        .widgetList<EditableText>(find.byType(EditableText))
+        .toList();
     // Expect at least 2 editable text widgets (username + password).
     expect(editables.length, greaterThanOrEqualTo(2));
     expect(editables[1].obscureText, isTrue);
@@ -180,8 +180,9 @@ void main() {
 
   // ── T-5: Empty form shows validation error ────────────────────────────────
 
-  testWidgets('T-5: Empty form submission shows validation error',
-      (tester) async {
+  testWidgets('T-5: Empty form submission shows validation error', (
+    tester,
+  ) async {
     await _pumpLoginPage(tester);
 
     // AuthController.onInit() pre-fills the fields with 'admin' / '123456'.
@@ -203,8 +204,7 @@ void main() {
 
   // ── T-6: Register entry button is present ─────────────────────────────────
 
-  testWidgets('T-6: Register entry OutlinedButton is rendered',
-      (tester) async {
+  testWidgets('T-6: Register entry OutlinedButton is rendered', (tester) async {
     await _pumpLoginPage(tester);
 
     expect(find.byType(OutlinedButton), findsOneWidget);
@@ -221,8 +221,9 @@ void main() {
 
   // ── T-8: Valid input does not produce validation error ────────────────────
 
-  testWidgets('T-8: Valid username and password pass validation',
-      (tester) async {
+  testWidgets('T-8: Valid username and password pass validation', (
+    tester,
+  ) async {
     await _pumpLoginPage(tester);
 
     final textFormFields = find.byType(TextFormField);
@@ -245,13 +246,15 @@ void main() {
 
   // ── T-9: Password visibility toggle ──────────────────────────────────────
 
-  testWidgets('T-9: Password becomes visible after tapping the eye icon',
-      (tester) async {
+  testWidgets('T-9: Password becomes visible after tapping the eye icon', (
+    tester,
+  ) async {
     await _pumpLoginPage(tester);
 
     // Before tap: password field (index 1) obscures text.
-    final editablesBefore =
-        tester.widgetList<EditableText>(find.byType(EditableText)).toList();
+    final editablesBefore = tester
+        .widgetList<EditableText>(find.byType(EditableText))
+        .toList();
     expect(editablesBefore[1].obscureText, isTrue);
 
     // Tap the visibility toggle icon (Icons.visibility_rounded).
@@ -259,8 +262,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // After tap: password field should show text.
-    final editablesAfter =
-        tester.widgetList<EditableText>(find.byType(EditableText)).toList();
+    final editablesAfter = tester
+        .widgetList<EditableText>(find.byType(EditableText))
+        .toList();
     expect(editablesAfter[1].obscureText, isFalse);
   });
 }

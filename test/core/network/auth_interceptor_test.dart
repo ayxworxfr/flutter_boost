@@ -1,21 +1,19 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:get/get.dart' hide Response;
-
 import 'package:flutter_boost/core/network/interceptors/auth_interceptor.dart';
 import 'package:flutter_boost/features/auth/models/user_model.dart';
 import 'package:flutter_boost/features/auth/services/auth_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart' hide Response;
 
 // ---------------------------------------------------------------------------
 // Fake AuthService — extends GetxService so Get.put() lifecycle works.
 // ---------------------------------------------------------------------------
 
 class _FakeAuthService extends GetxService implements AuthService {
+  _FakeAuthService(this._token);
   String? _token;
   int refreshCallCount = 0;
   bool refreshResult = true;
-
-  _FakeAuthService(this._token);
 
   @override
   String? get cachedAccessToken => _token;
@@ -38,8 +36,10 @@ class _FakeAuthService extends GetxService implements AuthService {
   Rxn<UserModel> get currentUser => throw UnimplementedError();
 
   @override
-  Future<UserModel> login({required String username, required String password}) =>
-      throw UnimplementedError();
+  Future<UserModel> login({
+    required String username,
+    required String password,
+  }) => throw UnimplementedError();
 
   @override
   Future<UserModel> register({
@@ -75,7 +75,7 @@ class _RecordingHandler extends ErrorInterceptorHandler {
   void next(DioException err) => nexted = true;
 
   @override
-  void resolve(Response response) => resolved = true;
+  void resolve(Response<dynamic> response) => resolved = true;
 
   @override
   void reject(DioException err, [bool callFollowingErrorInterceptor = false]) {}
@@ -86,8 +86,8 @@ class _RecordingHandler extends ErrorInterceptorHandler {
 // ---------------------------------------------------------------------------
 
 class _CapturingRequestHandler extends RequestInterceptorHandler {
-  final void Function(RequestOptions) onNext;
   _CapturingRequestHandler({required this.onNext});
+  final void Function(RequestOptions) onNext;
 
   @override
   void next(RequestOptions options) => onNext(options);
@@ -97,14 +97,14 @@ class _CapturingRequestHandler extends RequestInterceptorHandler {
 // Helpers
 // ---------------------------------------------------------------------------
 
-DioException _make401(String bearerToken, {Map<String, dynamic>? extraHeaders}) {
+DioException _make401(
+  String bearerToken, {
+  Map<String, dynamic>? extraHeaders,
+}) {
   return DioException(
     requestOptions: RequestOptions(
       path: '/api/test',
-      headers: {
-        'Authorization': 'Bearer $bearerToken',
-        ...?extraHeaders,
-      },
+      headers: {'Authorization': 'Bearer $bearerToken', ...?extraHeaders},
     ),
     response: Response(
       requestOptions: RequestOptions(path: '/api/test'),
@@ -126,11 +126,13 @@ DioException _makeError(int statusCode) {
 }
 
 // Dio that always throws a connection error (avoids real network calls in tests).
-Dio _localDio() => Dio(BaseOptions(
-      baseUrl: 'http://localhost:19999',
-      connectTimeout: const Duration(milliseconds: 50),
-      receiveTimeout: const Duration(milliseconds: 50),
-    ));
+Dio _localDio() => Dio(
+  BaseOptions(
+    baseUrl: 'http://localhost:19999',
+    connectTimeout: const Duration(milliseconds: 50),
+    receiveTimeout: const Duration(milliseconds: 50),
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -143,33 +145,39 @@ void main() {
   tearDown(() => Get.deleteAll(force: true));
 
   group('non-401 and retry-header pass-through', () {
-    test('non-401 500 error passes through without calling refreshToken', () async {
-      final fake = _FakeAuthService('token');
-      Get.put<AuthService>(fake);
+    test(
+      'non-401 500 error passes through without calling refreshToken',
+      () async {
+        final fake = _FakeAuthService('token');
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
-      interceptor.dio = Dio();
+        final interceptor = AuthInterceptor();
+        interceptor.dio = Dio();
 
-      final handler = _RecordingHandler();
-      await interceptor.onError(_makeError(500), handler);
+        final handler = _RecordingHandler();
+        await interceptor.onError(_makeError(500), handler);
 
-      expect(fake.refreshCallCount, equals(0));
-      expect(handler.nexted, isTrue);
-    });
+        expect(fake.refreshCallCount, equals(0));
+        expect(handler.nexted, isTrue);
+      },
+    );
 
-    test('non-401 403 error passes through without calling refreshToken', () async {
-      final fake = _FakeAuthService('token');
-      Get.put<AuthService>(fake);
+    test(
+      'non-401 403 error passes through without calling refreshToken',
+      () async {
+        final fake = _FakeAuthService('token');
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
-      interceptor.dio = Dio();
+        final interceptor = AuthInterceptor();
+        interceptor.dio = Dio();
 
-      final handler = _RecordingHandler();
-      await interceptor.onError(_makeError(403), handler);
+        final handler = _RecordingHandler();
+        await interceptor.onError(_makeError(403), handler);
 
-      expect(fake.refreshCallCount, equals(0));
-      expect(handler.nexted, isTrue);
-    });
+        expect(fake.refreshCallCount, equals(0));
+        expect(handler.nexted, isTrue);
+      },
+    );
 
     test('X-Retry header on 401 skips refreshToken', () async {
       final fake = _FakeAuthService('token');
@@ -210,45 +218,54 @@ void main() {
       final h3 = _RecordingHandler();
       await interceptor.onError(_make401('old_token'), h3);
 
-      expect(fake.refreshCallCount, equals(1),
-          reason: 'refreshToken must be called only once across three 401 errors');
+      expect(
+        fake.refreshCallCount,
+        equals(1),
+        reason: 'refreshToken must be called only once across three 401 errors',
+      );
     });
 
-    test('second 401 with old token resolves or nexts without extra refresh', () async {
-      final fake = _FakeAuthService('old_token');
-      Get.put<AuthService>(fake);
+    test(
+      'second 401 with old token resolves or nexts without extra refresh',
+      () async {
+        final fake = _FakeAuthService('old_token');
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
-      interceptor.dio = _localDio();
+        final interceptor = AuthInterceptor();
+        interceptor.dio = _localDio();
 
-      final h1 = _RecordingHandler();
-      await interceptor.onError(_make401('old_token'), h1);
+        final h1 = _RecordingHandler();
+        await interceptor.onError(_make401('old_token'), h1);
 
-      final h2 = _RecordingHandler();
-      await interceptor.onError(_make401('old_token'), h2);
+        final h2 = _RecordingHandler();
+        await interceptor.onError(_make401('old_token'), h2);
 
-      expect(fake.refreshCallCount, equals(1));
-      expect(h2.resolved || h2.nexted, isTrue);
-    });
+        expect(fake.refreshCallCount, equals(1));
+        expect(h2.resolved || h2.nexted, isTrue);
+      },
+    );
   });
 
   group('refresh failure → navigate to login', () {
-    test('calls refreshToken exactly once when refresh returns false', () async {
-      final fake = _FakeAuthService('expired_token')..refreshResult = false;
-      Get.put<AuthService>(fake);
+    test(
+      'calls refreshToken exactly once when refresh returns false',
+      () async {
+        final fake = _FakeAuthService('expired_token')..refreshResult = false;
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
-      interceptor.dio = Dio();
+        final interceptor = AuthInterceptor();
+        interceptor.dio = Dio();
 
-      final handler = _RecordingHandler();
-      try {
-        await interceptor.onError(_make401('expired_token'), handler);
-      } catch (_) {
-        // AppRouter.go may throw in headless test context.
-      }
+        final handler = _RecordingHandler();
+        try {
+          await interceptor.onError(_make401('expired_token'), handler);
+        } catch (_) {
+          // AppRouter.go may throw in headless test context.
+        }
 
-      expect(fake.refreshCallCount, equals(1));
-    });
+        expect(fake.refreshCallCount, equals(1));
+      },
+    );
 
     test('handler.next is called after failed refresh', () async {
       final fake = _FakeAuthService('expired_token')..refreshResult = false;
@@ -268,54 +285,65 @@ void main() {
       expect(fake.refreshCallCount, equals(1));
     });
 
-    test('when token is null (no auth header), 401 still attempts refresh', () async {
-      final fake = _FakeAuthService(null)..refreshResult = false;
-      Get.put<AuthService>(fake);
+    test(
+      'when token is null (no auth header), 401 still attempts refresh',
+      () async {
+        final fake = _FakeAuthService(null)..refreshResult = false;
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
-      interceptor.dio = Dio();
+        final interceptor = AuthInterceptor();
+        interceptor.dio = Dio();
 
-      final handler = _RecordingHandler();
-      try {
-        await interceptor.onError(
-          DioException(
-            requestOptions: RequestOptions(path: '/api/test'),
-            response: Response(
+        final handler = _RecordingHandler();
+        try {
+          await interceptor.onError(
+            DioException(
               requestOptions: RequestOptions(path: '/api/test'),
-              statusCode: 401,
+              response: Response(
+                requestOptions: RequestOptions(path: '/api/test'),
+                statusCode: 401,
+              ),
+              type: DioExceptionType.badResponse,
             ),
-            type: DioExceptionType.badResponse,
-          ),
-          handler,
-        );
-      } catch (_) {}
+            handler,
+          );
+        } catch (_) {}
 
-      expect(fake.refreshCallCount, equals(1));
-    });
+        expect(fake.refreshCallCount, equals(1));
+      },
+    );
   });
 
   group('onRequest token injection', () {
-    test('injects Bearer token into request headers when token is present', () async {
-      final fake = _FakeAuthService('my_access_token');
-      Get.put<AuthService>(fake);
+    test(
+      'injects Bearer token into request headers when token is present',
+      () async {
+        final fake = _FakeAuthService('my_access_token');
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
+        final interceptor = AuthInterceptor();
 
-      final options = RequestOptions(path: '/api/resource');
-      bool nextCalled = false;
-      RequestOptions? captured;
+        final options = RequestOptions(path: '/api/resource');
+        var nextCalled = false;
+        RequestOptions? captured;
 
-      interceptor.onRequest(
-        options,
-        _CapturingRequestHandler(onNext: (opts) {
-          nextCalled = true;
-          captured = opts;
-        }),
-      );
+        interceptor.onRequest(
+          options,
+          _CapturingRequestHandler(
+            onNext: (opts) {
+              nextCalled = true;
+              captured = opts;
+            },
+          ),
+        );
 
-      expect(nextCalled, isTrue);
-      expect(captured?.headers['Authorization'], equals('Bearer my_access_token'));
-    });
+        expect(nextCalled, isTrue);
+        expect(
+          captured?.headers['Authorization'],
+          equals('Bearer my_access_token'),
+        );
+      },
+    );
 
     test('does not inject Authorization header when token is null', () async {
       final fake = _FakeAuthService(null);
@@ -324,41 +352,48 @@ void main() {
       final interceptor = AuthInterceptor();
 
       final options = RequestOptions(path: '/api/resource');
-      bool nextCalled = false;
+      var nextCalled = false;
       RequestOptions? captured;
 
       interceptor.onRequest(
         options,
-        _CapturingRequestHandler(onNext: (opts) {
-          nextCalled = true;
-          captured = opts;
-        }),
+        _CapturingRequestHandler(
+          onNext: (opts) {
+            nextCalled = true;
+            captured = opts;
+          },
+        ),
       );
 
       expect(nextCalled, isTrue);
       expect(captured?.headers.containsKey('Authorization'), isFalse);
     });
 
-    test('does not inject Authorization header when token is empty string', () async {
-      final fake = _FakeAuthService('');
-      Get.put<AuthService>(fake);
+    test(
+      'does not inject Authorization header when token is empty string',
+      () async {
+        final fake = _FakeAuthService('');
+        Get.put<AuthService>(fake);
 
-      final interceptor = AuthInterceptor();
+        final interceptor = AuthInterceptor();
 
-      final options = RequestOptions(path: '/api/resource');
-      bool nextCalled = false;
-      RequestOptions? captured;
+        final options = RequestOptions(path: '/api/resource');
+        var nextCalled = false;
+        RequestOptions? captured;
 
-      interceptor.onRequest(
-        options,
-        _CapturingRequestHandler(onNext: (opts) {
-          nextCalled = true;
-          captured = opts;
-        }),
-      );
+        interceptor.onRequest(
+          options,
+          _CapturingRequestHandler(
+            onNext: (opts) {
+              nextCalled = true;
+              captured = opts;
+            },
+          ),
+        );
 
-      expect(nextCalled, isTrue);
-      expect(captured?.headers.containsKey('Authorization'), isFalse);
-    });
+        expect(nextCalled, isTrue);
+        expect(captured?.headers.containsKey('Authorization'), isFalse);
+      },
+    );
   });
 }

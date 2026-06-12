@@ -8,7 +8,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('Flutter Boost smoke test', (WidgetTester tester) async {
+  testWidgets('Flutter Boost smoke test', (tester) async {
     // TODO: Add widget tests
     expect(true, isTrue);
   });
